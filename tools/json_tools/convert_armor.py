@@ -17,9 +17,9 @@ args_dict = vars(args.parse_args())
 # we read all the files twice, may as well save them
 all_filepaths = set()
 # Definitions and paths:
-items_at_path = dict()
+items_at_path = {}
 # All of the armor definitions - for copy-from
-all_armor_defs = dict()
+all_armor_defs = {}
 # The keys we are moving to armor portion data
 transferred_keys = [
     "material",
@@ -49,9 +49,7 @@ accepted_types = [
 
 
 def id_or_abstract(jo):
-    if "id" in jo:
-        return jo["id"]
-    return jo["abstract"]
+    return jo["id"] if "id" in jo else jo["abstract"]
 
 
 # Extract all the JSON defs of armor items to all_armor_defs for copy-from
@@ -150,13 +148,14 @@ def get_armor_data_rec(jo, dat):
 # Returns empty dict if this armor specifies no novel armor data
 # (And doesn't already have other armor data)
 def get_armor_data(jo):
-    dat = dict()
+    dat = {}
     # This will be done again in the recursive function
     # But we do it here for an early return on no data
     read_armor_data(jo, dat)
-    if("armor" not in jo and
-       (len(dat) == 0 or (len(dat) == 1 and "material" in dat))):
-        return dict()
+    if "armor" not in jo and (
+        not dat or (len(dat) == 1 and "material" in dat)
+    ):
+        return {}
 
     get_armor_data_rec(jo, dat)
     return dat
@@ -168,7 +167,7 @@ def actually_distinct(jo):
     if "copy-from" not in jo:
         return True
 
-    dat = dict()
+    dat = {}
 
     read_armor_data(jo, dat)
 
@@ -201,7 +200,7 @@ def merge_with_armor(jo, dat):
 
 def handle_armor_data(jo):
     armor = jo["armor_data"]
-    dat = dict()
+    dat = {}
     for key in transferred_keys:
         if key not in armor:
             continue
@@ -262,16 +261,12 @@ def gen_new(path):
 
             change = True
 
-            if "armor" not in jo:
-                if actually_distinct(jo):
-                    if "copy-from" in jo:
-                        jo["armor"] = merge_with_armor(jo, dat)
-                    else:
-                        jo["armor"] = [dat]
-            else:
+            if "armor" in jo:
                 for portion in jo["armor"]:
                     portion.update(dat)
 
+            elif actually_distinct(jo):
+                jo["armor"] = merge_with_armor(jo, dat) if "copy-from" in jo else [dat]
             for key in transferred_keys:
                 if key != "material" and key in jo:
                     del(jo[key])

@@ -67,14 +67,12 @@ def convert_tile_entry(tile_entry, old_name, new_name):
         return tile_entry, False
 
     changed = False
-    old_fg_id = tile_entry.get("fg", [])
-    if old_fg_id:
+    if old_fg_id := tile_entry.get("fg", []):
         tile_entry["fg"], fg_changed = convert_index(
             old_fg_id, old_name, new_name)
         changed = fg_changed
 
-    old_bg_id = tile_entry.get("bg", [])
-    if old_bg_id:
+    if old_bg_id := tile_entry.get("bg", []):
         tile_entry["bg"], bg_changed = convert_index(
             old_bg_id, old_name, new_name)
         changed |= bg_changed
@@ -131,30 +129,29 @@ if __name__ == '__main__':
     if tmp_new_name.endswith(".png"):
         new_name = tmp_new_name[:-4]
 
-    old_name_json = old_name + ".json"
-    old_name_png = old_name + ".png"
-    new_name_json = new_name + ".json"
-    new_name_png = new_name + ".png"
+    old_name_json = f"{old_name}.json"
+    old_name_png = f"{old_name}.png"
+    new_name_json = f"{new_name}.json"
+    new_name_png = f"{new_name}.png"
 
     if not tileset_dirname.startswith("gfx/"):
-        tileset_dirname = "gfx/" + tileset_dirname
+        tileset_dirname = f"gfx/{tileset_dirname}"
     if tileset_dirname.endswith("/"):
         tileset_dirname = tileset_dirname[:-1]
 
-    print("In " + tileset_dirname + ", renaming " +
-          old_name + " to " + new_name)
+    print(f"In {tileset_dirname}, renaming {old_name} to {new_name}")
     for png_dirname in os.listdir(tileset_dirname):
         if not png_dirname.startswith("pngs_"):
             continue
-        png_path = tileset_dirname + "/" + png_dirname
+        png_path = f"{tileset_dirname}/{png_dirname}"
         for subdir_fpath, dirnames, filenames in os.walk(png_path):
             for filename in filenames:
-                old_path = subdir_fpath + "/" + filename
+                old_path = f"{subdir_fpath}/{filename}"
                 if filename.endswith(".json"):
                     convert_tile_entry_file(old_path, old_name, new_name)
                 if filename == old_name_png:
-                    new_path = subdir_fpath + "/" + new_name_png
+                    new_path = f"{subdir_fpath}/{new_name_png}"
                     os.rename(old_path, new_path)
                 elif filename == old_name_json:
-                    new_path = subdir_fpath + "/" + new_name_json
+                    new_path = f"{subdir_fpath}/{new_name_json}"
                     os.rename(old_path, new_path)

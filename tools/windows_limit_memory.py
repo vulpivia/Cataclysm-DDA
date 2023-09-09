@@ -312,10 +312,7 @@ class Kernel32Wrapper:
         """
         str_obj = obj if isinstance(obj, str) else str(obj)
 
-        if max_buffer_len is None:
-            max_len_value = len(str_obj) + 1
-        else:
-            max_len_value = max_buffer_len
+        max_len_value = len(str_obj) + 1 if max_buffer_len is None else max_buffer_len
         max_len = max(max_len_value, len(str_obj))
 
         return ctypes.create_unicode_buffer(str_obj, max_len)
@@ -454,8 +451,10 @@ class ProcessLimiter:
             logger.error(
                 "Error: ResumeThread failed but the process is started!")
             # try to kill it
-            if 0 != self._kernel32.TerminateProcess(self._handle_process,
-                                                    0xDEADBEEF):
+            if (
+                self._kernel32.TerminateProcess(self._handle_process, 0xDEADBEEF)
+                != 0
+            ):
                 logger.info("Successfully killed the zombie process.")
             else:
                 logger.warning("The zombie process is sitll alive. Try to "
@@ -692,9 +691,7 @@ class ProcessLimiter:
                 # we received an event, but it's not from our job; we can
                 # ignore it!
                 continue
-            # message
-            msg = msg_map.get(completion_code.value)
-            if msg:
+            if msg := msg_map.get(completion_code.value):
                 logger.info(f"IO Port Message: {msg}")
             if completion_code.value == JOB_OBJECT_MSG_ACTIVE_PROCESS_ZERO:
                 # no more processes in the job, we can exit.
@@ -726,10 +723,7 @@ def main(args: argparse.Namespace) -> int:
                     f"{args.memory}")
     elif args.command_name == "pid":
         # pid to int
-        if args.pid.startswith("0x") or args.pid.startswith("0X"):
-            base = 16
-        else:
-            base = 10
+        base = 16 if args.pid.startswith("0x") or args.pid.startswith("0X") else 10
         args.pid = int(args.pid, base)
         logger.info(f"Process Pid: {args.pid:#x}; Memory limit (MiB): "
                     f"{args.memory}")

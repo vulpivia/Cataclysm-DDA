@@ -15,6 +15,7 @@ Examples with nested attributes:
 
 """
 
+
 import argparse
 import csv
 import sys
@@ -37,9 +38,11 @@ parser.add_argument(
     default="md",
     help="output format: 'md' for markdown, 'csv' for comma-separated")
 parser.add_argument(
-    "-t", "--type",
+    "-t",
+    "--type",
     help="only include JSON data matching these types, separated by comma",
-    type=lambda s: list([i for i in s.split(',')]))
+    type=lambda s: list(list(s.split(','))),
+)
 parser.add_argument(
     "--nonestring",
     default="None",
@@ -94,27 +97,19 @@ def item_values(item, fields, none_string="None"):
     """
     values = []
     for field in fields:
-        if "." in field:
-            subkeys = field.split(".")
-        else:
-            subkeys = [field]
+        subkeys = field.split(".") if "." in field else [field]
         # Descend into dotted keys
         it = item
         for subkey in subkeys:
             # Is it a dict with this subkey?
             if isinstance(it, dict) and subkey in it:
                 it = it[subkey]
-            # Is it a list of dicts having this subkey?
             elif isinstance(it, list) and all(subkey in o for o in it):
                 # Pull from all subkeys, or just the one
                 if len(it) == 1:
-                    if isinstance(it[0], dict):
-                        it = it[0][subkey]
-                    else:
-                        it = it[0]
+                    it = it[0][subkey] if isinstance(it[0], dict) else it[0]
                 else:
                     it = [i[subkey] for i in it]
-            # Stop if any subkey is not found
             else:
                 it = none_string
                 break
@@ -124,21 +119,17 @@ def item_values(item, fields, none_string="None"):
                 # it dict contains only i18zed values
                 first_good_value = None
                 for k in I18N_DICT_KEYS:
-                    value = it.get(k, None)
-                    if value:
+                    if value := it.get(k, None):
                         first_good_value = value
                         break
-                values.append("%s" % first_good_value or none_string)
+                values.append(f"{first_good_value}" or none_string)
             else:
                 # Make dict presentable
-                values.append("%s" % it.items())
-        # Separate lists with slashes
+                values.append(f"{it.items()}")
         elif isinstance(it, list):
-            values.append(" / ".join(
-                "%s" % i if i is not None else none_string for i in it))
-        # Otherwise just force string
+            values.append(" / ".join(f"{i}" if i is not None else none_string for i in it))
         else:
-            values.append("%s" % it if it is not None else none_string)
+            values.append(f"{it}" if it is not None else none_string)
 
     return values
 
@@ -152,11 +143,9 @@ def get_format_class_by_extension(format_string):
     """
     format_name = format_string.upper()
     try:
-        format_class = getattr(
-            sys.modules[__name__],
-            "{}Format".format(format_name))
+        format_class = getattr(sys.modules[__name__], f"{format_name}Format")
     except AttributeError:
-        sys.exit("Unknown format {}".format(format_name))
+        sys.exit(f"Unknown format {format_name}")
     return format_class
 
 

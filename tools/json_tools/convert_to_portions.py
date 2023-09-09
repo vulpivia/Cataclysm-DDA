@@ -10,13 +10,11 @@ args_dict = vars(args.parse_args())
 
 
 def portionize(jo):
-    dat = dict()
-
-    for member in ["encumbrance", "max_encumbrance",
-                   "coverage", "covers"]:
-        if member in jo:
-            dat[member] = jo.pop(member)
-
+    dat = {
+        member: jo.pop(member)
+        for member in ["encumbrance", "max_encumbrance", "coverage", "covers"]
+        if member in jo
+    }
     if not dat:
         return None
 

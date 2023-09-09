@@ -9,5 +9,8 @@ def parse_skill(json, origin):
         write_text(json["name"], origin, comment="Skill name")
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of skill \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of skill \"{name}\"',
+        )

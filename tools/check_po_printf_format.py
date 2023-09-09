@@ -90,21 +90,18 @@ def check_message(entry):
     if non_pos_msgid == non_pos_msgstr and \
        sorted(pos_msgid) == sorted(pos_msgstr):
         return (True, [], [], "")
-    # "%2$d %1$s" is considered equivalent to "%s %d"
-    # as the order of types is preserved
-    msgid_types = []
-    msgstr_types = []
-    for arg in non_pos_msgid + sorted(pos_msgid):
-        msgid_types.append(get_type(arg))
-    for arg in non_pos_msgstr + sorted(pos_msgstr):
-        msgstr_types.append(get_type(arg))
+    msgid_types = [get_type(arg) for arg in non_pos_msgid + sorted(pos_msgid)]
+    msgstr_types = [get_type(arg) for arg in non_pos_msgstr + sorted(pos_msgstr)]
     if len(msgid_types) != len(msgstr_types):
         return (False, seg_msgid, seg_msgstr, "The number of arguments differ")
-    for i in range(0, len(msgid_types)):
-        if msgid_types[i] != msgstr_types[i]:
-            return (False, seg_msgid, seg_msgstr,
-                    "The types of arguments differ")
-    return (True, [], [], "")
+    return next(
+        (
+            (False, seg_msgid, seg_msgstr, "The types of arguments differ")
+            for i in range(0, len(msgid_types))
+            if msgid_types[i] != msgstr_types[i]
+        ),
+        (True, [], [], ""),
+    )
 
 
 def check_po_file(file):
@@ -146,23 +143,24 @@ def print_message(msg, segments):
     print(bcolors.ENDC)
 
 
-po_files = []
-for file in sorted(os.listdir("lang/po")):
-    if file.endswith(".po") and not file.endswith("en.po"):
-        po_files.append(file)
+po_files = [
+    file
+    for file in sorted(os.listdir("lang/po"))
+    if file.endswith(".po") and not file.endswith("en.po")
+]
 files_to_check = []
 if len(sys.argv) == 1:
     files_to_check = po_files
 else:
     for i in range(1, len(sys.argv)):
-        if sys.argv[i] + ".po" in po_files:
-            files_to_check.append(sys.argv[i] + ".po")
+        if f"{sys.argv[i]}.po" in po_files:
+            files_to_check.append(f"{sys.argv[i]}.po")
         else:
             print("Warning: Unknown language", sys.argv[i])
 num_errors = 0
 for file in sorted(files_to_check):
     print("Checking", file, end="", flush=True)
-    errors = check_po_file("lang/po/" + file)
+    errors = check_po_file(f"lang/po/{file}")
     n = len(errors)
     num_errors += n
     if n > 0:

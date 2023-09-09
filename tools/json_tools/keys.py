@@ -11,6 +11,7 @@ Example usages:
 
 """
 
+
 import sys
 import json
 import argparse
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     elif args.human:
         title = "Count of keys"
         print("\n\n%s" % title)
-        print("(Data from %s out of %s blobs)" % (num_matches, len(json_data)))
+        print(f"(Data from {num_matches} out of {len(json_data)} blobs)")
         print("-" * len(title))
         ui_counts_to_columns(stats)
     elif args.list:

@@ -12,9 +12,9 @@ mods_this_time = []
 
 
 def compatible_with(mod, existing_mods):
-    if mod in total_conversions and total_conversions & set(existing_mods):
-        return False
-    return True
+    return mod not in total_conversions or not total_conversions & set(
+        existing_mods
+    )
 
 
 def add_mods(mods):
@@ -61,6 +61,5 @@ while mods_remaining:
         if mod not in mods_this_time:
             add_mods([mod])
     if not mods_remaining & set(mods_this_time):
-        raise RuntimeError(
-            'mods remain ({}) but none could be added'.format(mods_remaining))
+        raise RuntimeError(f'mods remain ({mods_remaining}) but none could be added')
     print_modlist(mods_this_time, mods_remaining)

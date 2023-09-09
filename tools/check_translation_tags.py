@@ -22,11 +22,7 @@ def init_tags():
 
 def extract_tags(msg):
     matches = pattern.findall(msg)
-    result = set()
-    for match in matches:
-        if match in tags:
-            result.add(match)
-    return result
+    return {match for match in matches if match in tags}
 
 
 def check_message(entry):
@@ -43,8 +39,7 @@ def check_po_file(file):
     pofile = polib.pofile(file)
     errors = 0
     for entry in pofile.translated_entries():
-        missing_tags = check_message(entry)
-        if missing_tags:
+        if missing_tags := check_message(entry):
             print("Tag(s) {} missing in translation: {} => {}".format(
                 missing_tags,
                 entry.msgid.replace("\n", "\\n"),
@@ -54,22 +49,23 @@ def check_po_file(file):
 
 
 init_tags()
-po_files = []
-for file in sorted(os.listdir("lang/po")):
-    if file.endswith(".po") and not file.endswith("en.po"):
-        po_files.append(file)
+po_files = [
+    file
+    for file in sorted(os.listdir("lang/po"))
+    if file.endswith(".po") and not file.endswith("en.po")
+]
 files_to_check = []
 if len(sys.argv) == 1:
     files_to_check = po_files
 else:
     for i in range(1, len(sys.argv)):
-        if sys.argv[i] + ".po" in po_files:
-            files_to_check.append(sys.argv[i] + ".po")
+        if f"{sys.argv[i]}.po" in po_files:
+            files_to_check.append(f"{sys.argv[i]}.po")
         else:
             print("Warning: Unknown language", sys.argv[i])
 num_errors = 0
 for file in sorted(files_to_check):
-    print("Checking {}".format(file))
-    num_errors += check_po_file("lang/po/" + file)
+    print(f"Checking {file}")
+    num_errors += check_po_file(f"lang/po/{file}")
     print()
 exit(num_errors)

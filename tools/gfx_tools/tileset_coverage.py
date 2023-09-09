@@ -194,11 +194,7 @@ def write_output(data: pandas.DataFrame, output_filename: str) -> int:
     Write the resulting DataFrame to a file
     """
     result = data.to_csv(output_filename)
-    if result is None:
-        # error
-        return 1
-
-    return 0
+    return 1 if result is None else 0
 
 
 if __name__ == '__main__':

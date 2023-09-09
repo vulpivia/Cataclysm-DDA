@@ -197,7 +197,7 @@ def read_properties(filepath: str) -> dict:
     '''
     with open(filepath, 'r', encoding="utf-8") as file:
         pairs = {}
-        for line in file.readlines():
+        for line in file:
             line = line.strip()
             if line and not line.startswith('#'):
                 key, value = line.split(':')
@@ -322,9 +322,11 @@ class Tileset:
 
             log.info('parsing %s tilesheet %s', sheet_type, sheet.name)
             if not run_silent:
-                print("Composing [" + sheet_type +
-                      "] tilesheet [" + sheet.name + "]...",
-                      end=' ' if no_tqdm else '\n', flush=True)
+                print(
+                    f"Composing [{sheet_type}] tilesheet [{sheet.name}]...",
+                    end=' ' if no_tqdm else '\n',
+                    flush=True,
+                )
             if sheet_type != 'fallback':
                 sheet.walk_dirs()
                 # TODO: generate JSON first
@@ -344,10 +346,10 @@ class Tileset:
 
         # combine config data in the correct order
         sheet_configs = typed_sheets['main'] + typed_sheets['filler'] \
-            + typed_sheets['fallback']
+                + typed_sheets['fallback']
 
         # prepare "tiles-new", but remember max index of each sheet in keys
-        tiles_new_dict = dict()
+        tiles_new_dict = {}
 
         def create_tile_entries_for_unused(
             unused: list,
@@ -520,9 +522,7 @@ class Tilesheet:
             return False
         if self.sprite_width != self.tileset.sprite_width:
             return False
-        if self.sprite_height != self.tileset.sprite_height:
-            return False
-        return True
+        return self.sprite_height == self.tileset.sprite_height
 
     def walk_dirs(self) -> None:
         '''
@@ -652,7 +652,7 @@ class Tilesheet:
 
         # count empty spaces in the last row
         self.tileset.pngnum += self.sprites_across - \
-            ((len(self.sprites) % self.sprites_across) or self.sprites_across)
+                ((len(self.sprites) % self.sprites_across) or self.sprites_across)
 
         if self.tileset.only_json:
             return True
@@ -668,8 +668,7 @@ class Tilesheet:
         sheet_image.pngsave(str(self.output), **pngsave_args)
 
         if self.tileset.palette_copies and not self.tileset.palette:
-            sheet_image.pngsave(
-                str(self.output) + '8', palette=True, **pngsave_args)
+            sheet_image.pngsave(f'{str(self.output)}8', palette=True, **pngsave_args)
 
         return True
 
@@ -711,10 +710,8 @@ class TileEntry:
             )
             return None
 
-        # make sure entry_ids is a list
-        if entry_ids:
-            if not isinstance(entry_ids, list):
-                entry_ids = [entry_ids]
+        if not isinstance(entry_ids, list):
+            entry_ids = [entry_ids]
 
         # convert fg value
         if fg_layer:
@@ -824,13 +821,13 @@ class TileEntry:
         Get sprite index by sprite name and append it to entry
         '''
         if sprite_name:
-            sprite_index = self.tilesheet.tileset\
-                .pngname_to_pngnum.get(sprite_name, 0)
-            if sprite_index:
+            if sprite_index := self.tilesheet.tileset.pngname_to_pngnum.get(
+                sprite_name, 0
+            ):
                 sheet_type = 'filler' if self.tilesheet.is_filler else 'main'
                 try:
                     self.tilesheet.tileset\
-                        .unreferenced_pngnames[sheet_type].remove(sprite_name)
+                            .unreferenced_pngnames[sheet_type].remove(sprite_name)
                 except ValueError:
                     pass
 
@@ -943,10 +940,7 @@ def main() -> Union[int, ComposingException]:
     except ComposingException as exception:
         return exception
 
-    if log_tracker.level >= logging.ERROR:
-        return 1
-
-    return 0
+    return 1 if log_tracker.level >= logging.ERROR else 0
 
 
 if __name__ == '__main__':

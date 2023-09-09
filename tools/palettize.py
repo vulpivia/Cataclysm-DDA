@@ -6,10 +6,7 @@ import copy
 
 
 def hash_key(key):
-    if isinstance(key, list):
-        return "list_" + "".join(key)
-    else:
-        return key
+    return "list_" + "".join(key) if isinstance(key, list) else key
 
 
 def parse_furnter(om_objs, palette, conflicts):
@@ -78,9 +75,9 @@ if mapgen_source.endswith(".json"):
         with open(mapgen_source, encoding="utf-8") as mapgen_file:
             mapgen += json.load(mapgen_file)
     except FileNotFoundError:
-        exit("Failed: could not find {}".format(mapgen_source))
+        exit(f"Failed: could not find {mapgen_source}")
 else:
-    exit("Failed: invalid mapgen file name {}".format(mapgen_source))
+    exit(f"Failed: invalid mapgen file name {mapgen_source}")
 
 furn_pal = {}
 furn_conflicts = {}
@@ -110,9 +107,9 @@ for om_tile in mapgen:
     if om_object.get("furniture"):
         if furn_conflicts:
             om_furn = om_object.get("furniture", {})
-            om_furn_final = resolve_conflicts(om_furn, furn_pal,
-                                              furn_conflicts)
-            if om_furn_final:
+            if om_furn_final := resolve_conflicts(
+                om_furn, furn_pal, furn_conflicts
+            ):
                 om_object["furniture"] = om_furn_final
             else:
                 del om_object["furniture"]
@@ -122,8 +119,9 @@ for om_tile in mapgen:
     if om_object.get("terrain"):
         if ter_conflicts:
             om_ter = om_object.get("terrain", {})
-            om_ter_final = resolve_conflicts(om_ter, ter_pal, ter_conflicts)
-            if om_ter_final:
+            if om_ter_final := resolve_conflicts(
+                om_ter, ter_pal, ter_conflicts
+            ):
                 om_object["terrain"] = om_ter_final
             else:
                 del om_object["terrain"]

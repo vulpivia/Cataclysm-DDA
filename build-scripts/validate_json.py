@@ -19,17 +19,18 @@ def main():
                 with open(file_path, encoding="utf-8") as fp:
                     _ = json.load(fp)
             except OSError as e:
-                print("Error opening {}: {}".format(file_path, e))
+                print(f"Error opening {file_path}: {e}")
                 errors += 1
             except json.JSONDecodeError as e:
-                print("Error parsing {}: {}".format(file_path, e))
+                print(f"Error parsing {file_path}: {e}")
                 errors += 1
     if errors == 0:
-        print("All {} JSON files healthy.".format(total))
+        print(f"All {total} JSON files healthy.")
         return 0
     else:
-        print("Found {} erroneous files among {} JSON files in the repository."
-              .format(errors, total))
+        print(
+            f"Found {errors} erroneous files among {total} JSON files in the repository."
+        )
         return min(errors, 255)
 
 

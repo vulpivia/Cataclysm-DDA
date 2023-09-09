@@ -9,5 +9,4 @@ def parse_help(json, origin):
         write_text(json["name"], origin, comment="Help menu")
 
     for msg in json.get("messages", []):
-        write_text(msg, origin,
-                   comment="Help message in menu \"{}\"".format(name))
+        write_text(msg, origin, comment=f'Help message in menu \"{name}\"')

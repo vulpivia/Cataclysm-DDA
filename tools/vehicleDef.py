@@ -45,14 +45,13 @@ def getVehicleInstances(mapPath):
         mapData = json.load(mapFile)
         for i in range(0, len(mapData)):
             for vehicle in mapData[i]["vehicles"]:
-                if argsDict["vehicle"] is not None:
-                    if argsDict["vehicle"] == vehicle["name"]:
-                        vehicles.append(vehicle)
-                        print(f"Found \"{vehicle['name']}\"")
-                else:
+                if (
+                    argsDict["vehicle"] is not None
+                    and argsDict["vehicle"] == vehicle["name"]
+                    or argsDict["vehicle"] is None
+                ):
                     vehicles.append(vehicle)
                     print(f"Found \"{vehicle['name']}\"")
-
     return vehicles
 
 
@@ -70,14 +69,15 @@ def buildVehicleDef(vehicle):
             "part": part["id"] + part_variant
         })
 
-        for item in part["items"]:
-            itemsDef.append({
+        itemsDef.extend(
+            {
                 "x": part["mount_dx"],
                 "y": part["mount_dy"],
                 "chance": 100,
-                "items": [item["typeid"]]
-            })
-
+                "items": [item["typeid"]],
+            }
+            for item in part["items"]
+        )
     frames = [
         p for p in partsDef
         if re.match(r'(xl|hd|folding_)?frame', p["part"]) is not None
@@ -91,21 +91,17 @@ def buildVehicleDef(vehicle):
 
     itemsDef.sort(key=lambda i: (i["x"], i["y"]))
 
-    vehicleDef = {
+    return {
         "id": vehicle["name"],
         "type": "vehicle",
         "name": vehicle["name"],
         "parts": frames + everythingElse,
-        "items": itemsDef
+        "items": itemsDef,
     }
-
-    return vehicleDef
 
 
 def sortFrames(frames):
-    sortedFrames = []
-    sortedFrames.append(frames.pop())
-
+    sortedFrames = [frames.pop()]
     while len(frames) > 0:
         nextFrame = frames.pop()
         found = False

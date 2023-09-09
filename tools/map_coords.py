@@ -63,11 +63,7 @@ def info_map(format: str) -> list:
 
     dx = mx * 180 + cx
     dy = my * 180 + cy
-    dz = 0
-
-    if len(format.split()) == 3:
-        dz = int(format.split()[2])
-
+    dz = int(format.split()[2]) if len(format.split()) == 3 else 0
     return (dx, dy, dz)
 
 
@@ -131,7 +127,7 @@ if __name__ == "__main__":
     if len(sys.argv) > 1:
         for key, arg in enumerate(sys.argv[1:]):
             if arg[0] == "-" and arg[1].isdigit():
-                argvCopy = " " + arg
+                argvCopy = f" {arg}"
                 sys.argv[key + 1] = argvCopy
 
     parser = argparse.ArgumentParser(

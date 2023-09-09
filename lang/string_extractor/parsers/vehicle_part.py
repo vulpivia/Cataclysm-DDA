@@ -11,5 +11,8 @@ def parse_vehicle_part(json, origin):
         name = json["id"]
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of vehicle part \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of vehicle part \"{name}\"',
+        )

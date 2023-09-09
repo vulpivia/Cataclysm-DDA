@@ -62,8 +62,7 @@ def load_json_data(data_directory):
                     filename.relative_to(data_directory)
                 entries.append(data)
         except AttributeError as err:
-            print("ERROR: Failed to read data from '%s': %s" %
-                  (filename, err), file=sys.stderr)
+            print(f"ERROR: Failed to read data from '{filename}': {err}", file=sys.stderr)
             print(data)
             sys.exit(1)
     return entries
@@ -89,22 +88,19 @@ def _recurse_through_igroups(igroup, item_group, item_to_group, group_id=None):
         if not entries:
             entries = igroup.get("items", [])
         if not entries:
-            groups = igroup.get("groups", [])
-            if groups:
+            if groups := igroup.get("groups", []):
                 for group in groups:
-                    if isinstance(group, list):
-                        groupname = group[0]
-                    else:
-                        groupname = group
+                    groupname = group[0] if isinstance(group, list) else group
                     if groupname in item_group:
                         _recurse_through_igroups(item_group[groupname],
                                                  item_group,
                                                  item_to_group,
                                                  group_id=group_id)
                     else:
-                        print("ERROR: '%s' does not have 'items', or "
-                              "'entries', or usable 'groups'" %
-                              group_id, file=sys.stderr)
+                        print(
+                            f"ERROR: '{group_id}' does not have 'items', or 'entries', or usable 'groups'",
+                            file=sys.stderr,
+                        )
                         pp.pprint(igroup)
                         sys.exit(1)
     else:
@@ -138,10 +134,8 @@ def get_item_data(entries, categories=None, ignore=None):
     """Scans the raw data structure from JSON and constructs
        an item to group map, a dict of orphans, a dict of items,
        an a list of potential problems"""
-    ignore_items = ["battery_test"]
     TYPE_WHITELIST.append("item_group")
-    if ignore:
-        ignore_items = ignore
+    ignore_items = ignore if ignore else ["battery_test"]
     item_categories = DEFAULT_CATEGORIES
     if categories:
         item_categories = categories
@@ -171,8 +165,8 @@ def get_item_data(entries, categories=None, ignore=None):
         # if it's not an item_group, it's probably an item
         item_id = entry.get("id")
         item_entry[item_id] = entry
-    for igroup in item_group:
-        _recurse_through_igroups(item_group[igroup], item_group, item_to_group)
+    for value in item_group.values():
+        _recurse_through_igroups(value, item_group, item_to_group)
     for item in item_entry:
         itemtype = item_entry[item].get("type")
         if itemtype not in item_categories:
@@ -209,10 +203,12 @@ if __name__ == "__main__":
                 elif "str_pl" in name:
                     name = name["str_pl"]
             else:
-                print("WARNING: the 'name' property of '%s' is not a dict" %
-                      (oid), file=sys.stderr)
+                print(
+                    f"WARNING: the 'name' property of '{oid}' is not a dict",
+                    file=sys.stderr,
+                )
                 print(orphan[oid], file=sys.stderr)
-            print("%s ('%s')" % (oid, name))
+            print(f"{oid} ('{name}')")
     if args.map:
         print("item to itemgroup mapping:")
         print("==========================")
@@ -223,7 +219,7 @@ if __name__ == "__main__":
             if itemtype not in item_categories:
                 continue
             groups = list(itemgroup[item].keys())
-            print("%s: %s" % (item, ", ".join(groups)))
+            print(f'{item}: {", ".join(groups)}')
     if not args.orphans and not args.map:
         print("%d items in %d item groups in categories:\n%s\n"
               "Default categories:\n%s" %

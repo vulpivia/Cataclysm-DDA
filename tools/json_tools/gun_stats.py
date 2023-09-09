@@ -11,7 +11,7 @@ args.add_argument(
     help="output format: 'md' for markdown, 'csv' for comma-separated")
 args_dict = vars(args.parse_args())
 
-all_gun_jos = dict()
+all_gun_jos = {}
 all_keys = [
     "weight",
     "volume",
@@ -35,16 +35,11 @@ else:
 
 
 def insert_start_char():
-    if not csv:
-        return "| "
-    return ""
+    return "| " if not csv else ""
 
 
 def insert_separator():
-    if csv:
-        return ","
-    else:
-        return " | "
+    return "," if csv else " | "
 
 
 def stringify_list(subject):
@@ -74,10 +69,8 @@ def split_to_units(string):
                 break
         for x in range(lastdigit, len(string)):
             unit_str += string[x]
-        units = list()
-        units.append(digits)
-        units.append(unit_str)
-
+        units = []
+        units.extend((digits, unit_str))
     return units
 
 
@@ -133,10 +126,7 @@ def extract_ammo(jo):
     key = "ammo"
     if key not in jo:
         return str(0)
-    if len(jo[key]) == 1:
-        return str(jo[key][0])
-
-    return stringify_list(jo[key])
+    return str(jo[key][0]) if len(jo[key]) == 1 else stringify_list(jo[key])
 
 
 def extract_modes(jo):
@@ -144,14 +134,8 @@ def extract_modes(jo):
     if key not in jo:
         return str(1)
 
-    shots = list()
-    for mode in jo[key]:
-        shots.append(mode[2])
-
-    if len(shots) == 1:
-        return str(shots[0])
-
-    return stringify_list(shots)
+    shots = [mode[2] for mode in jo[key]]
+    return str(shots[0]) if len(shots) == 1 else stringify_list(shots)
 
 
 def extract_magazines(jo):
@@ -184,16 +168,12 @@ def extract_magazines(jo):
 
 def extract_accuracy(jo):
     key = "dispersion"
-    if key not in jo:
-        return str(0)
-    return str(jo[key])
+    return str(0) if key not in jo else str(jo[key])
 
 
 def extract_recoil(jo):
     key = "recoil"
-    if key not in jo:
-        return str(0)
-    return str(jo[key])
+    return str(0) if key not in jo else str(jo[key])
 
 
 def extract_damage(jo):
@@ -263,7 +243,7 @@ def print_header():
     if csv:
         return
     out = insert_start_char()
-    for x in range(0, len(header_keys)):
+    for _ in range(0, len(header_keys)):
         out += "---"
         out += insert_separator()
     print(out)
@@ -295,11 +275,7 @@ def extract_jos(path):
 
 
 def recurse_extract_keys(jo, dat):
-    filled = True
-    for key in all_keys:
-        if key not in dat:
-            filled = False
-
+    filled = all(key in dat for key in all_keys)
     if filled:
         return
 
@@ -321,7 +297,7 @@ def do_copy_from(jo):
     if "copy-from" not in jo:
         return jo
 
-    dat = dict()
+    dat = {}
     recurse_extract_keys(jo, dat)
 
     for key in dat:
@@ -342,9 +318,7 @@ for gun in all_gun_jos:
     new = do_copy_from(all_gun_jos[gun])
     all_gun_jos[gun] = new
 
-all_guns = []
-for key in all_gun_jos:
-    all_guns.append(all_gun_jos[key])
+all_guns = [all_gun_jos[key] for key in all_gun_jos]
 
 
 def ident(jo):
@@ -356,12 +330,7 @@ def identify(jo):
         #print(f"No ammo: {name}")
         return "$$$"
 
-    if type(jo["ammo"]) is list:
-        #if len(jo["ammo"]) != 1:
-        #    print(f"Many ammo: {name}")
-        return jo["ammo"][0]
-
-    return jo["ammo"]
+    return jo["ammo"][0] if type(jo["ammo"]) is list else jo["ammo"]
 
 
 sorted(all_guns, key=lambda jo: identify(jo))

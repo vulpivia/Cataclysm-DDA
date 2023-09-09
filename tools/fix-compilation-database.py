@@ -52,13 +52,13 @@ def main(argv):
                     with open(rsp_path, 'r', encoding="utf-8") as rsp:
                         newflags = shlex.split(rsp.read())
                         command = command[:i] + newflags + command[i + 1:]
-                        i = i + len(newflags)
+                        i += len(newflags)
                 else:
-                    match_result = starts_with_drive_letter.match(command[i])
-                    if match_result:
-                        command[i] = "{}:/{}".format(match_result.group(1),
-                                                     match_result.group(2))
-                    i = i + 1
+                    if match_result := starts_with_drive_letter.match(
+                        command[i]
+                    ):
+                        command[i] = f"{match_result.group(1)}:/{match_result.group(2)}"
+                    i += 1
             data[j]["command"] = " ".join([shlex.quote(s) for s in command])
 
     with open(compile_db, 'w', encoding="utf-8") as fs:

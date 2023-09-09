@@ -7,15 +7,21 @@ def parse_magazine(json, origin):
     name = get_singular_name(json["name"])
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of magazine \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of magazine \"{name}\"',
+        )
 
     if "variants" in json:
         for variant in json["variants"]:
             variant_name = get_singular_name(variant["name"])
-            write_text(variant["name"], origin,
-                       comment="Variant name of magazine \"{}\"".format(name),
-                       plural=True)
+            write_text(
+                variant["name"],
+                origin,
+                comment=f'Variant name of magazine \"{name}\"',
+                plural=True,
+            )
             write_text(variant["description"], origin,
                        comment="Description of variant \"{0}\" "
                        "of magazine \"{1}\"".format(variant_name, name))

@@ -22,14 +22,16 @@ def parse_mapgen(json, origin):
         if key in json["object"]:
             for sign in json["object"][key]:
                 if "signage" in sign:
-                    write_text(sign["signage"], origin,
-                               comment="Signage placed on map {}".format(om))
+                    write_text(sign["signage"], origin, comment=f"Signage placed on map {om}")
 
     if "signs" in json["object"]:
         for sign in json["object"]["signs"]:
             if "signage" in json["object"]["signs"][sign]:
-                write_text(json["object"]["signs"][sign]["signage"], origin,
-                           comment="Signage placed on map {}".format(om))
+                write_text(
+                    json["object"]["signs"][sign]["signage"],
+                    origin,
+                    comment=f"Signage placed on map {om}",
+                )
 
     if "computers" in json["object"]:
         for key in json["object"]["computers"]:
@@ -37,15 +39,17 @@ def parse_mapgen(json, origin):
             com_name = ""
             if "name" in com:
                 com_name = get_singular_name(com["name"])
-                write_text(
-                    com["name"], origin,
-                    comment="Computer name placed on map {}".format(om))
+                write_text(com["name"], origin, comment=f"Computer name placed on map {om}")
             for opt in com.get("options", []):
                 if "name" in opt:
-                    write_text(opt["name"], origin,
-                               comment="Interactive menu name in computer "
-                               "\"{}\" placed on map {}".format(com_name, om))
+                    write_text(
+                        opt["name"],
+                        origin,
+                        comment=f'Interactive menu name in computer \"{com_name}\" placed on map {om}',
+                    )
             if "access_denied" in com:
-                write_text(com["access_denied"], origin,
-                           comment="Access denied message on computer \"{}\""
-                           " placed on map {}".format(com_name, om))
+                write_text(
+                    com["access_denied"],
+                    origin,
+                    comment=f'Access denied message on computer \"{com_name}\" placed on map {om}',
+                )
