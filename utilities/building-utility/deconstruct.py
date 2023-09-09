@@ -107,11 +107,10 @@ def recursive_dict_update(info_dict, list_path, data):
     '''
     if list_path == []:
         return data
-    else:
-        info_dict[list_path[0]] = recursive_dict_update(
-            info_dict.get(list_path[0], {}),
-            list_path[1:], data)
-        return info_dict
+    info_dict[list_path[0]] = recursive_dict_update(
+        info_dict.get(list_path[0], {}),
+        list_path[1:], data)
+    return info_dict
 
 
 def is_list_of_lists(param):
@@ -185,8 +184,7 @@ def complete_json_file(template_file, all_cells, remove_template=True):
         json_output_list.append(copy_of_template)
 
     # TODO: better output file names
-    with open("output_" + os.path.basename(template_file.name),
-              "w", encoding="utf-8") as outfile:
+    with open(f"output_{os.path.basename(template_file.name)}", "w", encoding="utf-8") as outfile:
         json.dump(json_output_list, outfile, indent=4, separators=(",", ": "),
                   sort_keys=True, ensure_ascii=False)
 

@@ -9,6 +9,7 @@ Example usages:
 
 """
 
+
 import sys
 import argparse
 from util import import_data, matches_all_wheres, CDDAJSONWriter, WhereAction
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     if not plucked:
         print("Nothing found.")
         sys.exit(1)
-    elif plucked and not args.all:
+    elif not args.all:
         print(CDDAJSONWriter(plucked[0]).dumps())
     else:
         # ugh, didn't realize JSON writer only wanted single objects when I

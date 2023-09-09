@@ -54,10 +54,7 @@ def get_version(name):
 
 headers = [get_version(h) for h in headers]
 
-dicts = [
-    {field_name: field for field_name, field in zip(headers, row)}
-    for row in rows
-]
+dicts = [dict(zip(headers, row)) for row in rows]
 
 for dic in dicts:
     date = dic.pop('Date')
@@ -68,7 +65,8 @@ for dic in dicts:
         total += float(fraction)
         if version >= (10, 11) and version <= (10, 15):
             tally.append((version, total))
-    tally_str = ''
-    for version, total in tally:
-        tally_str += f'{version[0]}.{version[1]}: {total:4.1f}  '
+    tally_str = ''.join(
+        f'{version[0]}.{version[1]}: {total:4.1f}  '
+        for version, total in tally
+    )
     print(f'{date} :: {tally_str}')

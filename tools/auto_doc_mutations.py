@@ -46,9 +46,8 @@ def find_files(
                     _, ext = os.path.splitext(filename)
                     if ext in extensions:
                         yield os.path.join(dirpath, filename)
-        else:
-            if path.suffix in extensions:
-                yield path
+        elif path.suffix in extensions:
+            yield path
 
 
 @functools.total_ordering
@@ -92,7 +91,7 @@ def write_mutations(mutations: list[Mutation], filename: Path) -> None:
         # Write table of contents
         fd.write("# Table of Contents\n")
         fd.write("- Categories\n")
-        for category in categories.keys():
+        for category in categories:
             fd.write(
                 f'  - [{category}](#{category.replace(" ", "-").lower()})\n'
             )
@@ -237,11 +236,7 @@ def cli(paths, outfile, include_mods) -> None:
                 # - An array containing at least one object, the first of which
                 # contains info about the mod.
                 # - A single top-level object.
-                if isinstance(jfile, list) and len(jfile) > 0:
-                    mod_info = jfile[0]
-                else:
-                    mod_info = jfile
-
+                mod_info = jfile[0] if isinstance(jfile, list) and len(jfile) > 0 else jfile
                 if isinstance(mod_info, dict) and all(
                     (mod_info.get("id"), mod_info.get("dependencies"))
                 ):
@@ -288,7 +283,7 @@ def cli(paths, outfile, include_mods) -> None:
             if mod.id_ == "dda":
                 writepath = outfile
             else:
-                writepath = outfile.parent.joinpath(mod.id_ + ".md")
+                writepath = outfile.parent.joinpath(f"{mod.id_}.md")
 
             write_mutations(mod.mutations, writepath)
             click.echo(

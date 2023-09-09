@@ -9,7 +9,7 @@ all_genders = ["f", "m", "n"]
 
 
 def gender_options(subject):
-    return [subject + ":" + g for g in all_genders]
+    return [f"{subject}:{g}" for g in all_genders]
 
 
 dynamic_line_string_keys = [
@@ -73,7 +73,7 @@ def parse_response(json, origin):
 
     if "speaker_effect" in json:
         speaker_effects = json["speaker_effect"]
-        if not type(speaker_effects) is list:
+        if type(speaker_effects) is not list:
             speaker_effects = [speaker_effects]
         for eff in speaker_effects:
             if "effect" in eff:

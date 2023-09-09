@@ -27,7 +27,7 @@ def gen_new(path):
 
             # specifically, only recipes and uncrafts
             kind = jo["type"]
-            if kind != "recipe" and kind != "uncraft":
+            if kind not in ["recipe", "uncraft"]:
                 return None
 
             # Also, make sure it has a 'result'
@@ -41,9 +41,15 @@ def gen_new(path):
             if jo["result"] == args_dict["id"]:
                 # Already got this one
                 if jo["activity_level"] != "fake":
-                    print("skipping {}".format(jo["result"]) +
-                          " - value is {},".format(jo["activity_level"]) +
-                          " currently on {}".format(args_dict["id"]))
+                    print(
+                        (
+                            (
+                                f'skipping {jo["result"]}'
+                                + f' - value is {jo["activity_level"]},'
+                            )
+                            + f' currently on {args_dict["id"]}'
+                        )
+                    )
                     return None
                 jo["activity_level"] = args_dict["level"]
                 change = True

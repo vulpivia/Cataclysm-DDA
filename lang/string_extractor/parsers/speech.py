@@ -9,5 +9,9 @@ def parse_speech(json, origin):
         elif type(json["speaker"]) is str:
             speaker = json["speaker"]
     if "sound" in json:
-        write_text(json["sound"], origin, c_format=False,
-                   comment="Speech from speaker {}".format(speaker))
+        write_text(
+            json["sound"],
+            origin,
+            c_format=False,
+            comment=f"Speech from speaker {speaker}",
+        )

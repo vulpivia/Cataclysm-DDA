@@ -9,5 +9,8 @@ def parse_practice(json, origin):
         write_text(json["name"], origin, comment="Practice name")
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of practice \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of practice \"{name}\"',
+        )

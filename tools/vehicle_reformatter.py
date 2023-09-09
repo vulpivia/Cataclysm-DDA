@@ -21,9 +21,9 @@ def get_data(argsDict, resource_name):
                         resource_filename, encoding="utf-8") as resource_file:
                     resource += json.load(resource_file)
             except FileNotFoundError:
-                exit("Failed: could not find {}".format(resource_filename))
+                exit(f"Failed: could not find {resource_filename}")
         else:
-            print("Invalid filename {}".format(resource_filename))
+            print(f"Invalid filename {resource_filename}")
     return resource
 
 
@@ -49,13 +49,13 @@ def really_add_parts(xpoint, ypoint, xparts, new_parts):
     pretty_subparts = []
     temp_parts = ""
     for part in y_part["parts"]:
-        temp_parts += '"{}"'.format(part)
+        temp_parts += f'"{part}"'
         # debug - are we getting the line length test string correct?
         # print("{}: {}".format(len(temp_parts), temp_parts))
         if len(temp_parts) > LINE_LIMIT:
             pretty_parts.append(pretty_subparts)
             pretty_subparts = []
-            temp_parts = '"{}"'.format(part)
+            temp_parts = f'"{part}"'
         temp_parts += ", "
         pretty_subparts.append(part)
     pretty_parts.append(pretty_subparts)
@@ -71,7 +71,7 @@ def really_add_parts(xpoint, ypoint, xparts, new_parts):
             else:
                 rev_part = {"x": xpoint, "y": ypoint}
                 for key, value in subpart.items():
-                    if key == "x" or key == "y":
+                    if key in ["x", "y"]:
                         continue
                     rev_part[key] = value
         revised_parts.append(rev_part)
@@ -122,14 +122,13 @@ for datafile in argsDict.get("vehicle_sources", []):
             if part.get("parts"):
                 for new_part in part.get("parts"):
                     new_parts[part_x][part_y]["parts"].append(new_part)
+            elif part.get("fuel") or part.get("ammo"):
+                new_part = copy.deepcopy(part)
+                del new_part["x"]
+                del new_part["y"]
+                new_parts[part_x][part_y]["parts"].append(new_part)
             else:
-                if part.get("fuel") or part.get("ammo"):
-                    new_part = copy.deepcopy(part)
-                    del new_part["x"]
-                    del new_part["y"]
-                    new_parts[part_x][part_y]["parts"].append(new_part)
-                else:
-                    new_parts[part_x][part_y]["parts"].append(part.get("part"))
+                new_parts[part_x][part_y]["parts"].append(part.get("part"))
 
         # debug - did everything get copied over correctly?
         # print(json.dumps(new_parts, indent=2))

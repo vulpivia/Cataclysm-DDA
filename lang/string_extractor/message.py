@@ -11,5 +11,5 @@ class Message:
     text_plural: str
 
 
-messages = dict()
+messages = {}
 occurrences = []

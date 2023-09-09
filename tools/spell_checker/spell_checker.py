@@ -4,10 +4,7 @@ from . import Speller, Tokenizer, KnownWords
 
 
 def is_english(word):
-    for w in word:
-        if not ('a' <= w and w <= 'z'):
-            return False
-    return True
+    return all('a' <= w <= 'z' for w in word)
 
 
 def not_in_known_words(word):
@@ -16,8 +13,7 @@ def not_in_known_words(word):
 
 def sanitize_message(message):
     untagged = re.sub(r'<[0-9a-z_/]+>', '', message)
-    unformatted = re.sub(r'%[0-9lz\.\s$]*[scfd]', '', untagged)
-    return unformatted
+    return re.sub(r'%[0-9lz\.\s$]*[scfd]', '', untagged)
 
 
 def spell_check(message):

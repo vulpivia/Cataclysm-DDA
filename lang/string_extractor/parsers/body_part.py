@@ -19,19 +19,30 @@ def parse_body_part(json, origin):
         write_text(json["accusative_multiple"], origin,
                    comment="Accusative name of body part")
 
-    write_text(json["encumbrance_text"], origin,
-               comment="Encumbrance text of body part \"{}\"".format(name))
+    write_text(
+        json["encumbrance_text"],
+        origin,
+        comment=f'Encumbrance text of body part \"{name}\"',
+    )
 
-    write_text(json["heading"], origin,
-               comment="Heading of body part \"{}\"".format(name))
+    write_text(json["heading"], origin, comment=f'Heading of body part \"{name}\"')
 
-    write_text(json["heading_multiple"], origin,
-               comment="Heading of body part \"{}\"".format(name))
+    write_text(
+        json["heading_multiple"],
+        origin,
+        comment=f'Heading of body part \"{name}\"',
+    )
 
     if "smash_message" in json:
-        write_text(json["smash_message"], origin,
-                   comment="Smash message of body part \"{}\"".format(name))
+        write_text(
+            json["smash_message"],
+            origin,
+            comment=f'Smash message of body part \"{name}\"',
+        )
 
     if "hp_bar_ui_text" in json:
-        write_text(json["hp_bar_ui_text"], origin,
-                   comment="HP bar UI text of body part \"{}\"".format(name))
+        write_text(
+            json["hp_bar_ui_text"],
+            origin,
+            comment=f'HP bar UI text of body part \"{name}\"',
+        )

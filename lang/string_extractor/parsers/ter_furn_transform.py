@@ -26,12 +26,16 @@ def parse_ter_furn_transform(json, origin):
     if "terrain" in json:
         for terrain in json["terrain"]:
             if "message" in terrain:
-                write_text(terrain["message"], origin,
-                           comment="Message after transforming to \"{}\"".
-                           format(transform_result(terrain["result"])))
+                write_text(
+                    terrain["message"],
+                    origin,
+                    comment=f'Message after transforming to \"{transform_result(terrain["result"])}\"',
+                )
     if "furniture" in json:
         for furniture in json["furniture"]:
             if "message" in furniture:
-                write_text(furniture["message"], origin,
-                           comment="Message after transforming to \"{}\""
-                           .format(transform_result(furniture["result"])))
+                write_text(
+                    furniture["message"],
+                    origin,
+                    comment=f'Message after transforming to \"{transform_result(furniture["result"])}\"',
+                )

@@ -25,20 +25,18 @@ MAP_ROTATE = [
 
 
 def x_y_bucket(x, y):
-    return "{}__{}".format(math.floor((x - MIN_X) / STRIDE_X),
-                           math.floor((y - MIN_Y) / STRIDE_Y))
+    return f"{math.floor((x - MIN_X) / STRIDE_X)}__{math.floor((y - MIN_Y) / STRIDE_Y)}"
 
 
 def x_y_sub(x, y, is_north):
     if is_north:
-        return "{}__{}".format((x - MIN_X) % STRIDE_X, (y - MIN_Y) % STRIDE_Y)
+        return f"{(x - MIN_X) % STRIDE_X}__{(y - MIN_Y) % STRIDE_Y}"
     else:
-        return "{}__{}".format((x - MIN_X - 1) % STRIDE_X,
-                               (y - MIN_Y - 1) % STRIDE_Y)
+        return f"{(x - MIN_X - 1) % STRIDE_X}__{(y - MIN_Y - 1) % STRIDE_Y}"
 
 
 def x_y_simple(x, y):
-    return "{}__{}".format(x, y)
+    return f"{x}__{y}"
 
 
 def get_data(argsDict, resource_name):
@@ -53,9 +51,9 @@ def get_data(argsDict, resource_name):
                         resource_filename, encoding="utf-8") as resource_file:
                     resource += json.load(resource_file)
             except FileNotFoundError:
-                exit("Failed: could not find {}".format(resource_filename))
+                exit(f"Failed: could not find {resource_filename}")
         else:
-            print(("Invalid filename {}".format(resource_filename)))
+            print(f"Invalid filename {resource_filename}")
     return resource
 
 
@@ -103,8 +101,7 @@ def validate_old_map(old_map, entry):
 
     keysets = {}
     for key_term in KEYED_TERMS:
-        new_keyset = validate_keyed(key_term, old_obj, entry)
-        if new_keyset:
+        if new_keyset := validate_keyed(key_term, old_obj, entry):
             keysets[key_term] = new_keyset
         elif new_keyset != {}:
             return False

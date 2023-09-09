@@ -13,16 +13,22 @@ def parse_mutation_category(json, origin):
                 "junkie_message"
                 ]:
         if key in json:
-            write_text(json[key], origin,
-                       comment="\"{}\" of mutation class \"{}\""
-                       .format(key, name))
+            write_text(
+                json[key],
+                origin,
+                comment=f'\"{key}\" of mutation class \"{name}\"',
+            )
 
     if "memorial_message" in json:
-        write_text(json["memorial_message"], origin,
-                   context="memorial_male",
-                   comment="Memorial message of mutation class "
-                   "\"{}\" for male".format(name))
-        write_text(json["memorial_message"], origin,
-                   context="memorial_female",
-                   comment="Memorial message of mutation class "
-                   "\"{}\" for female".format(name))
+        write_text(
+            json["memorial_message"],
+            origin,
+            context="memorial_male",
+            comment=f'Memorial message of mutation class \"{name}\" for male',
+        )
+        write_text(
+            json["memorial_message"],
+            origin,
+            context="memorial_female",
+            comment=f'Memorial message of mutation class \"{name}\" for female',
+        )

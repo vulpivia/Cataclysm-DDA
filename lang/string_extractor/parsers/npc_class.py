@@ -12,6 +12,8 @@ def parse_npc_class(json, origin):
     elif "id" in json:
         name = json["id"]
     if "job_description" in json:
-        write_text(json["job_description"], origin,
-                   comment=["Job description of \"{}\" NPC class".format(name),
-                            comment])
+        write_text(
+            json["job_description"],
+            origin,
+            comment=[f'Job description of \"{name}\" NPC class', comment],
+        )

@@ -34,7 +34,7 @@ def get_dialogue_from_json():
             arg_path = arg_path[:-1]
         for subdir_path, dirnames, filenames in os.walk(arg_path):
             for filename in filenames:
-                path = subdir_path + "/" + filename
+                path = f"{subdir_path}/{filename}"
                 if path == "data/json/npcs/TALK_TEST.json":
                     continue
                 if path.endswith(".json"):
@@ -137,8 +137,7 @@ def validate(dialogue):
         if not isinstance(talk_topic, dict):
             continue
         if talk_topic.get("type") == "npc":
-            chat = talk_topic.get("chat")
-            if chat:
+            if chat := talk_topic.get("chat"):
                 start_topics.append(chat)
                 add_topic_by_chat(topics, chat, topic_branches)
             continue
@@ -167,25 +166,20 @@ def validate(dialogue):
     for topic_id, topic_record in topics.items():
         if not topic_record.get("valid", False):
             if topic_id in start_topics:
-                print("talk topic {} referenced in an NPC chat but not "
-                      "defined".format(topic_id))
+                print(f"talk topic {topic_id} referenced in an NPC chat but not defined")
             else:
-                print("talk topic {} referenced in a response but not "
-                      "defined".format(topic_id))
+                print(f"talk topic {topic_id} referenced in a response but not defined")
         if not topic_record.get("in_response", False):
-            print("talk topic {} defined but not referenced in a "
-                  "response".format(topic_id))
+            print(f"talk topic {topic_id} defined but not referenced in a response")
         if topic_id in OBSOLETE_TOPICS:
-            print("talk topic {} referenced despite being listed as "
-                  "obsolete.".format(topic_id))
+            print(f"talk topic {topic_id} referenced despite being listed as obsolete.")
 
     no_change = False
     passes = 0
     while not no_change and passes < len(topic_branches):
         no_change = True
         passes += 1
-        for topic_id in topic_branches:
-            branch_record = topic_branches[topic_id]
+        for topic_id, branch_record in topic_branches.items():
             if branch_record["ends"] or not topics[topic_id].get("valid",
                                                                  False):
                 continue
@@ -230,9 +224,9 @@ def validate(dialogue):
             continue
         branch_record = topic_branches[topic_id]
         if not branch_record["ends"]:
-            print("{} does not reach TALK_DONE".format(topic_id))
-        if not branch_record["parent"] in start_topics:
-            print("no path from a start topic to {}".format(topic_id))
+            print(f"{topic_id} does not reach TALK_DONE")
+        if branch_record["parent"] not in start_topics:
+            print(f"no path from a start topic to {topic_id}")
 
 
 validate(get_dialogue_from_json())

@@ -5,7 +5,7 @@ def parse_snippet(json, origin):
     text = json["text"]
     if type(text) is not list:
         text = [text]
-    comment = ["Snippet in category \"{}\"".format(json["category"])]
+    comment = [f'Snippet in category \"{json["category"]}\"']
     if "//" in json:
         comment.append(json["//"])
     c_format = "schizophrenia" in json

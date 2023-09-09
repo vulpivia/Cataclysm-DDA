@@ -288,8 +288,7 @@ class CommitRepository:
         if sort_by is not None:
             commit_list = sorted(commit_list, key=sort_by)
 
-        for commit in commit_list:
-            yield commit
+        yield from commit_list
 
     def traverse_commits_by_first_parent(self, initial_hash=None):
         """Iterate through Commits connected by the first Parent, until a
@@ -375,8 +374,7 @@ class CDDAPullRequestRepository:
         if sort_by is not None:
             pr_list = sorted(pr_list, key=sort_by)
 
-        for pr in pr_list:
-            yield pr
+        yield from pr_list
 
     def get_merged_pr_list_by_date(self, latest_dttm, oldest_dttm):
         """Return PullRequests merged between latest_dttm (including) and
@@ -430,8 +428,7 @@ class JenkinsBuildRepository:
         if sort_by is not None:
             build_list = sorted(build_list, key=sort_by)
 
-        for build in build_list:
-            yield build
+        yield from build_list
 
     def purge_references(self):
         self.ref_by_build_number.clear()
@@ -462,9 +459,7 @@ class JenkinsApi:
     def get_build_list(self):
         """Return the builds from Jenkins. API limits the result to last 999
         builds."""
-        request_url = (self.JENKINS_BUILD_LIST_API + '?' +
-                       urllib.parse.urlencode(
-                           self.JENKINS_BUILD_LONG_LIST_PARAMS))
+        request_url = f'{self.JENKINS_BUILD_LIST_API}?{urllib.parse.urlencode(self.JENKINS_BUILD_LONG_LIST_PARAMS)}'
         api_request = urllib.request.Request(request_url)
         log.debug(f'Processing Request {api_request.full_url}')
         with urllib.request.urlopen(api_request) as api_response:
@@ -546,17 +541,18 @@ class CommitApi:
         """Returns a callback that will process data into Commits instances and
         stop threads when needed."""
         def _process_commit_data_callback_closure(json_data, request_generator,
-                                                  api_request):
+                                                      api_request):
             nonlocal results_queue
             commit_list = [
                 self._create_commit_from_api_data(x) for x in json_data]
             for commit in commit_list:
                 results_queue.append(commit)
 
-            if request_generator.is_active and len(commit_list) == 0:
+            if request_generator.is_active and not commit_list:
                 log.debug(f'Target page found, stop giving threads more '
                           f'requests. Target URL: {api_request.full_url}')
                 request_generator.deactivate()
+
         return _process_commit_data_callback_closure
 
     def _create_commit_from_api_data(self, commit_data):
@@ -573,13 +569,12 @@ class CommitApi:
         # I rather have a name that doesn't match that leave it empty.
         # Anyways, I'm surprised but GitHub API sucks, is super inconsistent
         # and not well thought or documented.
-        if commit_data['author'] is not None:
-            if 'login' in commit_data['author']:
-                commit_author = commit_data['author']['login']
-            else:
-                commit_author = 'null'
-        else:
+        if commit_data['author'] is None:
             commit_author = commit_data['commit']['author']['name']
+        elif 'login' in commit_data['author']:
+            commit_author = commit_data['author']['login']
+        else:
+            commit_author = 'null'
         if commit_data['commit']['message']:
             commit_message = commit_data['commit']['message'].splitlines()[0]
         else:
@@ -685,7 +680,7 @@ class PullRequestApi:
         """Returns a callback that will process data into Pull Requests objects
         and stop threads when needed."""
         def _process_pr_data_callback_closure(json_data, request_generator,
-                                              api_request):
+                                                  api_request):
             nonlocal results_queue, min_dttm
             pull_request_list = [
                 self._create_pr_from_api_data(x) for x in json_data]
@@ -698,7 +693,7 @@ class PullRequestApi:
             target_page_found = not any(
                 pr.updated_after(min_dttm) for pr in pull_request_list)
 
-            if len(pull_request_list) == 0 or target_page_found:
+            if not pull_request_list or target_page_found:
                 if request_generator.is_active:
                     log.debug(
                         f'Target page found, stop giving threads more '
@@ -771,13 +766,13 @@ class MultiThreadedGitHubApi:
     def _process_api_requests_on_threads(request_generator, callback):
         """Process HTTP API requests and call the callback for each result
         JSON"""
-        log.debug(f'Thread Started!')
+        log.debug('Thread Started!')
         api_request = request_generator.generate()
         while api_request is not None:
             callback(do_github_request(api_request), request_generator,
                      api_request)
             api_request = request_generator.generate()
-        log.debug(f'No more requests left, killing Thread.')
+        log.debug('No more requests left, killing Thread.')
 
 
 class GitHubApiRequestBuilder(object):
@@ -791,19 +786,15 @@ class GitHubApiRequestBuilder(object):
         if params is None:
             request_url = url
         else:
-            request_url = url + '?' + urllib.parse.urlencode(params)
+            request_url = f'{url}?{urllib.parse.urlencode(params)}'
 
         if self.api_token is None:
-            api_request = urllib.request.Request(request_url)
-        else:
-            api_headers = {
-                'Authorization': 'token ' + self.api_token,
-                'Time-Zone': self.timezone,
-            }
-            api_request = urllib.request.Request(
-                request_url, headers=api_headers)
-
-        return api_request
+            return urllib.request.Request(request_url)
+        api_headers = {
+            'Authorization': f'token {self.api_token}',
+            'Time-Zone': self.timezone,
+        }
+        return urllib.request.Request(request_url, headers=api_headers)
 
 
 class CommitApiGenerator(GitHubApiRequestBuilder):
@@ -963,7 +954,7 @@ def do_github_request(api_request, retry_on_limit=3):
                 log.exception(f'Unhandled Exception: {err} - '
                               f'HTTP Headers: {err.getheaders()}')
                 raise
-    raise Exception(f'Retry limit reached')
+    raise Exception('Retry limit reached')
 
 
 def read_personal_token(filename):
@@ -976,7 +967,7 @@ def read_personal_token(filename):
     if filename is None:
         return None
 
-    try:
+    with contextlib.suppress(IOError):
         with open(
                 pathlib.Path(str(filename)).expanduser(),
                 encoding="utf-8") as token_file:
@@ -984,15 +975,12 @@ def read_personal_token(filename):
                               flags=re.MULTILINE)
             if match is not None:
                 return match.group('token')
-    except IOError:
-        pass
-
     return None
 
 
 @contextlib.contextmanager
 def smart_open(filename=None, *args, **kwargs):
-    if filename and (filename == '-' or filename == sys.stdout):
+    if filename and filename in ['-', sys.stdout]:
         fh = sys.stdout
     else:
         fh = open(filename, *args, **kwargs)
@@ -1027,10 +1015,7 @@ def main_entry(argv):
     )
 
     def convert_path(x):
-        if x == '-':
-            return sys.stdout
-        else:
-            return pathlib.Path(x).expanduser().resolve()
+        return sys.stdout if x == '-' else pathlib.Path(x).expanduser().resolve()
 
     parser.add_argument(
         '-D', '--by-date',
@@ -1232,7 +1217,7 @@ def build_output_by_date(pr_repo, commit_repo, target_dttm, end_dttm,
 
         if curr_date in commits_with_no_pr:
             if not flatten:
-                print(f"    MISC. COMMITS", file=output_file)
+                print("    MISC. COMMITS", file=output_file)
             for commit in commits_with_no_pr[curr_date]:
                 if not flatten:
                     print(f"        * {commit.message} (by {commit.author} in "
@@ -1246,7 +1231,7 @@ def build_output_by_date(pr_repo, commit_repo, target_dttm, end_dttm,
             include_summary_none and curr_date in pr_with_summary_none)
         if curr_date in pr_with_invalid_summary or is_included_summary_none:
             if not flatten:
-                print(f"    MISC. PULL REQUESTS", file=output_file)
+                print("    MISC. PULL REQUESTS", file=output_file)
             for pr in pr_with_invalid_summary[curr_date]:
                 if not flatten:
                     print(f"        * {pr.title} (by {pr.author} in "
@@ -1272,6 +1257,7 @@ def build_output_by_build(build_repo, pr_repo, commit_repo, output_file,
     # next build availiable that does have a hash
     def has_hash(build):
         return build.last_hash is not None
+
     sorted_builds = build_repo.get_all_builds(
         filter_by=has_hash, sort_by=lambda x: -x.build_dttm.timestamp())
     for build in sorted_builds:
@@ -1328,9 +1314,9 @@ def build_output_by_build(build_repo, pr_repo, commit_repo, output_file,
         commits_with_no_pr = [
             c for c in commits if not pr_repo.get_pr_by_merge_hash(c.hash)]
 
-        pr_with_summary = list()
-        pr_with_invalid_summary = list()
-        pr_with_summary_none = list()
+        pr_with_summary = []
+        pr_with_invalid_summary = []
+        pr_with_summary_none = []
         for pr in pull_requests:
             if pr.has_valid_summary and pr.summ_type == SummaryType.NONE:
                 pr_with_summary_none.append(pr)
@@ -1341,6 +1327,7 @@ def build_output_by_build(build_repo, pr_repo, commit_repo, output_file,
 
         def sort_by_type(pr):
             return pr.summ_type
+
         sorted_pr_list_by_category = sorted(pr_with_summary, key=sort_by_type)
         prs_by_type = itertools.groupby(
             sorted_pr_list_by_category, key=sort_by_type)
@@ -1351,8 +1338,8 @@ def build_output_by_build(build_repo, pr_repo, commit_repo, output_file,
                       f"PR {pr.id})", file=output_file)
             print(file=output_file)
 
-        if len(commits_with_no_pr) > 0:
-            print(f"    MISC. COMMITS", file=output_file)
+        if commits_with_no_pr:
+            print("    MISC. COMMITS", file=output_file)
             for commit in commits_with_no_pr:
                 print(f"        * {commit.message} (by {commit.author} in "
                       f"Commit {commit.hash[:7]})", file=output_file)
@@ -1360,8 +1347,8 @@ def build_output_by_build(build_repo, pr_repo, commit_repo, output_file,
 
         is_included_summary_none = (
             include_summary_none and len(pr_with_summary_none) > 0)
-        if len(pr_with_invalid_summary) > 0 or is_included_summary_none:
-            print(f"    MISC. PULL REQUESTS", file=output_file)
+        if pr_with_invalid_summary or is_included_summary_none:
+            print("    MISC. PULL REQUESTS", file=output_file)
             for pr in pr_with_invalid_summary:
                 print(f"        * {pr.title} (by {pr.author} in PR {pr.id})",
                       file=output_file)

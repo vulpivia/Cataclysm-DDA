@@ -14,6 +14,8 @@ def parse_recipe_category(json, origin):
                        comment="Crafting recipes subcategory \"all\"")
         else:
             subcat_name = subcat.split('_')[2]
-            write_text(subcat_name, origin,
-                       comment="Crafting recipes subcategory of \"{}\" cat."
-                       .format(cat_name))
+            write_text(
+                subcat_name,
+                origin,
+                comment=f'Crafting recipes subcategory of \"{cat_name}\" cat.',
+            )

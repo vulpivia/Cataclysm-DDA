@@ -69,9 +69,7 @@ def main(args):
                     try:
                         json_data = json.load(file)
                     except Exception as err:
-                        sys.stderr.write(
-                            "Problem reading file %s, reason: %s" %
-                            (filename, err))
+                        sys.stderr.write(f"Problem reading file {filename}, reason: {err}")
                         continue
                     if type(json_data) == dict:
                         json_data = [json_data]

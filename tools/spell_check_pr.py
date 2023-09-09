@@ -22,7 +22,7 @@ for message in diff["added"]:
         continue
     message = message.replace('\n', "\\n")
     for typo in typos:
-        bold = "**" + typo + "**"
+        bold = f"**{typo}**"
         message = re.sub(re.escape(typo), lambda _: bold, message,
                          flags=re.IGNORECASE)
     errors.append(message)

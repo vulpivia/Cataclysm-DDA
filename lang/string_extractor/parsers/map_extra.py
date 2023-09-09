@@ -9,5 +9,8 @@ def parse_map_extra(json, origin):
         write_text(json["name"], origin, comment="Name of map extra")
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of map extra \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of map extra \"{name}\"',
+        )

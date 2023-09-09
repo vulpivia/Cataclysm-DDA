@@ -2,6 +2,7 @@
 """
 Generate sprites for mapgen IDs
 """
+
 import argparse
 import json
 
@@ -23,17 +24,13 @@ TILE_ENTRY_TEMPLATE = {
     'fg': '',
     'rotates': True,
 }
-SKIPPED = {
-    'duplicate': set(),
-    'predecessor_mapgen': list(),
-    'no_rows': list(),
-}
+SKIPPED = {'duplicate': set(), 'predecessor_mapgen': [], 'no_rows': []}
 TERRAIN_COLOR_NAMES = {}
 PALETTES = {}
 OVERMAP_TERRAIN_DATA = {}
 SCHEME = {}
 CREATED_IDS = set()
-VARIANTS = dict()
+VARIANTS = {}
 SINGLE_COLOR_SPRITES = defaultdict(set)
 COLOR_NAMES = set()
 
@@ -55,9 +52,7 @@ def get_first_valid(
             if item:
                 value = item
                 break
-    if value:
-        return value
-    return default
+    return value if value else default
 
 
 class TupleJSONDecoder(json.JSONDecoder):
@@ -277,8 +272,7 @@ def write_image_with_rotations(
     """
     Write image to disk along with the rotations
     """
-    context_color = OVERMAP_TERRAIN_DATA.get(name)
-    if context_color:
+    if context_color := OVERMAP_TERRAIN_DATA.get(name):
         pixels = image.load()
         height, width = image.size
         for col in range(height):
@@ -434,7 +428,7 @@ def handle_single_color_sprites(
     """
     Generate images for all colors and create JSON with all the tile entries
     """
-    entries = list()
+    entries = []
 
     output_dir /= 'single_color'
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -551,8 +545,7 @@ def main():
 
         # combine "palettes" value with "terrain" to get all terrain values
         terrain_dict = {}
-        palettes = mapgen.get('palettes')
-        if palettes:
+        if palettes := mapgen.get('palettes'):
             for palette_id in palettes:
                 if isinstance(palette_id, OrderedDict):
                     palette_id = get_first_valid(
@@ -560,13 +553,12 @@ def main():
                     )
                 palette = PALETTES.get(palette_id)
                 if palette is not None:
-                    terrain_dict.update(palette)
+                    terrain_dict |= palette
                 else:
                     print(f'WARNING: unknown palette {palette_id}')
-                # TODO: support nested palettes, two cases found
+                            # TODO: support nested palettes, two cases found
 
-        terrain_defs = mapgen.get('terrain')
-        if terrain_defs:
+        if terrain_defs := mapgen.get('terrain'):
             terrain_dict.update(terrain_defs)
 
         # single_terrain = False

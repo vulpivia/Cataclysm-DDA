@@ -34,7 +34,7 @@ def write_text(json, origin, context="", comment="",
     if type(json) is str:
         text = json
         if plural:
-            text_plural = "{}s".format(text)
+            text_plural = f"{text}s"
     elif type(json) is dict:
         if "//~" in json:
             if type(json["//~"]) is str and json["//~"]:
@@ -51,20 +51,16 @@ def write_text(json, origin, context="", comment="",
             elif "str_pl" in json:
                 text_plural = json["str_pl"]
             else:
-                text_plural = "{}s".format(text)
+                text_plural = f"{text}s"
 
     if not text:
         return
 
     format_tag = ""
     if "%" in text:
-        if c_format:
-            format_tag = "c-format"
-        else:
-            format_tag = "no-c-format"
-
+        format_tag = "c-format" if c_format else "no-c-format"
     if (context, text) not in messages:
-        messages[(context, text)] = list()
+        messages[(context, text)] = []
 
     messages[(context, text)].append(
         Message(comments, origin, format_tag, context, text, text_plural))

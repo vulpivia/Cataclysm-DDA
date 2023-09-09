@@ -2,6 +2,7 @@
 """Run this script with -h for usage info and docs.
 """
 
+
 import argparse
 import sys
 import json
@@ -73,9 +74,9 @@ if __name__ == "__main__":
     if args.human and args.list:
         print("\n".join(sorted(stats.keys())))
     elif args.human:
-        title = "Count of values from field '%s'" % search_key
+        title = f"Count of values from field '{search_key}'"
         print("\n\n%s" % title)
-        print("(Data from %s out of %s blobs)" % (num_matches, len(json_data)))
+        print(f"(Data from {num_matches} out of {len(json_data)} blobs)")
         print("-" * len(title))
         ui_counts_to_columns(stats)
     elif args.list:

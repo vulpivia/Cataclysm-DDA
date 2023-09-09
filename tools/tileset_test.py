@@ -52,11 +52,7 @@ def parse_json(path: list) -> dict:
             return False
         data_folders.append(data_folder)
 
-    parsed_json = dict()
-
-    for _type in JSON_INFO:
-        parsed_json[_type] = []
-
+    parsed_json = {_type: [] for _type in JSON_INFO}
     for data_folder in data_folders:
         for file in data_folder.glob('**/*.json'):
             json_file = None
@@ -140,25 +136,22 @@ class QuarterMap:
     def as_string(self, ident=0) -> str:
         identstr = '\t' * ident
         retstr = identstr + '{\n'
-        retstr += identstr + f'\t"version": {self.version},\n'
+        retstr += f'{identstr}\t"version": {self.version},\n'
 
         retstr += identstr + '\t"coordinates": [\n'
-        retstr += identstr + f'\t\t{self.coordinate[0]},\n'
-        retstr += identstr + f'\t\t{self.coordinate[1]},\n'
-        retstr += identstr + f'\t\t{self.coordinate[2]}\n'
+        retstr += f'{identstr}\t\t{self.coordinate[0]},\n'
+        retstr += f'{identstr}\t\t{self.coordinate[1]},\n'
+        retstr += f'{identstr}\t\t{self.coordinate[2]}\n'
         retstr += identstr + '\t],\n'
 
         retstr += identstr * ident + '\t"terrain": [\n'
         for key in range(144):
-            if key < len(self.terrain):
-                entry = self.terrain[key]
-            else:
-                entry = 't_grass'
+            entry = self.terrain[key] if key < len(self.terrain) else 't_grass'
             retstr += '\t\t'
             if type(entry) is str:
-                retstr += identstr + f'"{entry}"'
+                retstr += f'{identstr}"{entry}"'
             else:
-                retstr += identstr + f'[ "{entry[0]}", {entry[1]} ]'
+                retstr += f'{identstr}[ "{entry[0]}", {entry[1]} ]'
             if key != 143:
                 retstr += ','
             retstr += '\n'
@@ -168,8 +161,8 @@ class QuarterMap:
         for key, entry in enumerate(self.items):
             retstr += '\t\t'
             retstr += identstr + \
-                f'{entry["row"]}, {entry["column"]}, ' \
-                f'[{{ "typeid": "{entry["typeid"]}" }}]'
+                    f'{entry["row"]}, {entry["column"]}, ' \
+                    f'[{{ "typeid": "{entry["typeid"]}" }}]'
             if key != len(self.items) - 1:
                 retstr += ','
             retstr += '\n'
@@ -179,8 +172,8 @@ class QuarterMap:
         for key, entry in enumerate(self.furniture):
             retstr += identstr
             retstr += "\t\t[ " + \
-                f'{entry["row"]}, {entry["column"]}, ' \
-                f'"{entry["typeid"]}" ]'
+                    f'{entry["row"]}, {entry["column"]}, ' \
+                    f'"{entry["typeid"]}" ]'
             if key != len(self.furniture) - 1:
                 retstr += ','
             retstr += '\n'
@@ -190,8 +183,8 @@ class QuarterMap:
         for key, entry in enumerate(self.traps):
             retstr += identstr
             retstr += "\t\t[ " + \
-                f'{entry["row"]}, {entry["column"]}, ' \
-                f'"{entry["typeid"]}" ]'
+                    f'{entry["row"]}, {entry["column"]}, ' \
+                    f'"{entry["typeid"]}" ]'
             if key != len(self.traps) - 1:
                 retstr += ','
             retstr += '\n'
@@ -207,8 +200,7 @@ class QuarterMap:
 class FullMap:
 
     def __init__(self, offset_x: int, offset_y: int):
-        self._map = []
-        self._map.append(QuarterMap(offset_x, offset_y))
+        self._map = [QuarterMap(offset_x, offset_y)]
         self._map.append(QuarterMap(offset_x, offset_y + 1))
         self._map.append(QuarterMap(offset_x + 1, offset_y))
         self._map.append(QuarterMap(offset_x + 1, offset_y + 1))
@@ -217,7 +209,7 @@ class FullMap:
         i = 0
         while True:
             map_index = i // 144
-            if i == 576 or i == len(items):
+            if i in [576, len(items)]:
                 break
 
             self._map[map_index].add_item(items[i])
@@ -227,7 +219,7 @@ class FullMap:
         i = 0
         while True:
             map_index = i // 16
-            if i == 64 or i == len(furniture):
+            if i in [64, len(furniture)]:
                 break
 
             self._map[map_index].add_furniture(furniture[i])
@@ -237,7 +229,7 @@ class FullMap:
         i = 0
         while True:
             map_index = i // 16
-            if i == 64 or i == len(terrain):
+            if i in [64, len(terrain)]:
                 break
 
             self._map[map_index].add_terrain(terrain[i])
@@ -247,7 +239,7 @@ class FullMap:
         i = 0
         while True:
             map_index = i // 16
-            if i == 64 or i == len(traps):
+            if i in [64, len(traps)]:
                 break
 
             self._map[map_index].add_trap(traps[i])
@@ -289,10 +281,10 @@ class Handler:
         if not self.maps_folder.exists():
             raise PathNotExist(self.maps_folder)
         self.maps_folder = self.maps_folder.joinpath('maps')
-        if self.maps_folder.exists() and not (self.dry_run or self.force):
+        if self.maps_folder.exists() and not self.dry_run and not self.force:
             raise MapsFolderExists(self.maps_folder)
 
-        self._maps = dict()
+        self._maps = {}
         square_offset = 0
         for key, value in parsed_ids.items():
             if key not in JSON_INFO:

@@ -45,9 +45,9 @@ def write_pot_header(fp, pkg_name="Cataclysm-DDA"):
     time = datetime.now(tzinfo).strftime('%Y-%m-%d %H:%M%z')
     print("msgid \"\"", file=fp)
     print("msgstr \"\"", file=fp)
-    print("\"Project-Id-Version: {}\\n\"".format(pkg_name), file=fp)
-    print("\"POT-Creation-Date: {}\\n\"".format(time), file=fp)
-    print("\"PO-Revision-Date: {}\\n\"".format(time), file=fp)
+    print(f'\"Project-Id-Version: {pkg_name}\\n\"', file=fp)
+    print(f'\"POT-Creation-Date: {time}\\n\"', file=fp)
+    print(f'\"PO-Revision-Date: {time}\\n\"', file=fp)
     print("\"Last-Translator: None\\n\"", file=fp)
     print("\"Language-Team: None\\n\"", file=fp)
     print("\"Language: en\\n\"", file=fp)
@@ -60,7 +60,7 @@ def write_pot_header(fp, pkg_name="Cataclysm-DDA"):
 
 def sanitize_plural_colissions(reference):
     if not os.path.isfile(reference):
-        raise Exception("cannot read {}".format(reference))
+        raise Exception(f"cannot read {reference}")
     pofile = polib.pofile(reference)
     for entry in pofile.untranslated_entries():
         if entry.msgid_plural:
@@ -94,27 +94,26 @@ def write_to_pot(fp, with_header=True, pkg_name=None, sanitize=None):
 
         # translator comments
         for line in deduplciate(comments):
-            print("#. ~ {}".format(line), file=fp)
+            print(f"#. ~ {line}", file=fp)
 
         # reference
-        print("#: {}".format(origin), file=fp)
+        print(f"#: {origin}", file=fp)
 
         # c-format
         if format_tag:
-            print("#, {}".format(format_tag), file=fp)
+            print(f"#, {format_tag}", file=fp)
 
         # context
         if context:
-            print("msgctxt \"{}\"".format(context), file=fp)
+            print(f'msgctxt \"{context}\"', file=fp)
 
+        print(format_msg("msgid", text), file=fp)
         # text
         if text_plural:
-            print(format_msg("msgid", text), file=fp)
             print(format_msg("msgid_plural", text_plural), file=fp)
             print("msgstr[0] \"\"", file=fp)
             print("msgstr[1] \"\"", file=fp)
         else:
-            print(format_msg("msgid", text), file=fp)
             print("msgstr \"\"", file=fp)
 
         print("", file=fp)

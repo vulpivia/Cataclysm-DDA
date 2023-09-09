@@ -36,19 +36,15 @@ def import_data(json_dir=JSON_DIR, json_fmatch=JSON_FNMATCH):
                         candidates = json.load(
                             file, object_pairs_hook=OrderedDict)
                     except Exception as err:
-                        errors.append(
-                            "Problem reading file {},".format(json_file) +
-                            " reason: {}".format(err))
-                    if type(candidates) != list:
-                        if type(candidates) == OrderedDict:
-                            data.append(candidates)
-                        else:
-                            errors.append(
-                                "Problem parsing data from" +
-                                " file {},".format(json_file) +
-                                " reason: expected a list.")
-                    else:
+                        errors.append((f"Problem reading file {json_file}," + f" reason: {err}"))
+                    if type(candidates) == list:
                         data += candidates
+                    elif type(candidates) == OrderedDict:
+                        data.append(candidates)
+                    else:
+                        errors.append(
+                            f"Problem parsing data from file {json_file}, reason: expected a list."
+                        )
     return (data, errors)
 
 
@@ -59,7 +55,7 @@ def match_primitive_values(item_value, where_value):
     if type(item_value) == str:
         # Direct match
         return bool(re.match(where_value, item_value))
-    elif type(item_value) == int or type(item_value) == float:
+    elif type(item_value) in [int, float]:
         # match after string conversion
         return bool(re.match(where_value, str(item_value)))
     elif type(item_value) == bool:
@@ -86,21 +82,11 @@ def matches_where(item, where_key, where_value):
     # So we have some value.
     item_value = item[where_key]
     # Matching interpolation for keyboard constrained input.
-    if type(item_value) == list:
-        # 1 level deep.
-        for next_level in item_value:
-            if match_primitive_values(next_level, where_value):
-                return True
-        # else...
-        return False
-    elif type(item_value) == dict:
-        # Match against the keys of the dictionary... I question my logic.
-        # 1 level deep.
-        for next_level in item_value:
-            if match_primitive_values(next_level, where_value):
-                return True
-        # else...
-        return False
+    if type(item_value) in [list, dict]:
+        return any(
+            match_primitive_values(next_level, where_value)
+            for next_level in item_value
+        )
     else:
         return match_primitive_values(item_value, where_value)
 
@@ -117,11 +103,7 @@ def matches_all_wheres(item, where_fn_list):
     False if:
     any where's don't match
     """
-    for where_fn in where_fn_list:
-        if not where_fn(item):
-            return False
-    # Must be a match.
-    return True
+    return all(where_fn(item) for where_fn in where_fn_list)
 
 
 class WhereAction(argparse.Action):
@@ -182,17 +164,15 @@ def key_counter(data, where_fn_list):
             if type(val) == OrderedDict:
                 for subkey in val.keys():
                     if not subkey.startswith('//'):
-                        stats[key + '.' + subkey] += 1
+                        stats[f'{key}.{subkey}'] += 1
 
-            # If value is a list of objects, tally key.subkey for each
             elif type(val) == list:
                 if all(type(e) == OrderedDict for e in val):
                     for obj in val:
                         for subkey in obj.keys():
                             if not subkey.startswith('//'):
-                                stats[key + '.' + subkey] += 1
+                                stats[f'{key}.{subkey}'] += 1
 
-            # For anything else, it only counts as one
             else:
                 stats[key] += 1
 
@@ -207,18 +187,14 @@ def item_value_counter(_value):
     # String or unicode
     if isinstance(_value, str):
         stats[_value] += 1
-    # Cast numbers to strings
-    elif type(_value) == int or type(_value) == float:
+    elif type(_value) in [int, float]:
         stats[str(_value)] += 1
-    # Pull all values from objects
     elif type(_value) == OrderedDict:
         stats += list_value_counter(list(_value.values()))
-    # Pull values from list of objects or strings
     elif type(_value) == list:
         stats += list_value_counter(_value)
     else:
-        raise ValueError("Value '%s' has unknown type %s" %
-                         (_value, type(_value)))
+        raise ValueError(f"Value '{_value}' has unknown type {type(_value)}")
     return stats
 
 
@@ -269,15 +245,10 @@ def value_counter(data, search_key, where_fn_list):
         # values from all of them to include in stats
         if type(parent_val) == list and all(type(e) == OrderedDict
                                             for e in parent_val):
-            for od in parent_val:
-                if child_key in od:
-                    stat_vals.append(od[child_key])
-
-        # If this value is a single object, get value at parent_key.child_key
+            stat_vals.extend(od[child_key] for od in parent_val if child_key in od)
         elif type(parent_val) == OrderedDict and child_key in parent_val:
             stat_vals.append(parent_val[child_key])
 
-        # Other kinds of data cannot be indexed by parent_key.child_key
         else:
             stat_vals.append(parent_val)
 
@@ -293,10 +264,8 @@ def ui_values_to_columns(values, screen_width=80):
     """
     max_val_len = len(max(values, key=len)) + 1
     cols = screen_width / max_val_len
-    iters = 0
-    for v in values:
+    for iters, v in enumerate(values, start=1):
         print(v.ljust(max_val_len), end=' ')
-        iters += 1
         if iters % cols == 0:
             print("")
     print("")
@@ -381,7 +350,7 @@ class CDDAJSONWriter(object):
         while items:
             k, v = items.pop(0)
             # Special cases first.
-            if (k == "tools" or k == "components") and type(v) == list:
+            if k in ["tools", "components"] and type(v) == list:
                 self.list_of_lists(k, v)
             else:
                 self.write_primitive_key_val(k, v)

@@ -27,7 +27,7 @@ class bcolors:
 
 def read_all_messages(path):
     if not os.path.isfile(path):
-        raise Exception("cannot read {}".format(path))
+        raise Exception(f"cannot read {path}")
     pofile = polib.pofile(path)
     messages = set()
     for entry in pofile.untranslated_entries():
@@ -92,7 +92,7 @@ def main():
     (deleted_messages, added_messages) = compare_po(sys.argv[1], sys.argv[2])
     if options.output_file:
         output_to_json(options.output_file, deleted_messages, added_messages)
-        print("Comparison result written to {}".format(options.output_file))
+        print(f"Comparison result written to {options.output_file}")
     else:
         output_to_screen(deleted_messages, added_messages)
     return 0

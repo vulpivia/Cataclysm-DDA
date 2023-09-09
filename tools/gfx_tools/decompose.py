@@ -55,7 +55,7 @@ class TileSheetData(object):
         self.write_dim = self.sprite_width != refs.default_width
         self.write_dim |= self.sprite_height != refs.default_height
         self.write_dim |= self.sprite_offset_x or self.sprite_offset_y
-        self.ts_pathname = refs.tileset_pathname + "/" + self.ts_filename
+        self.ts_pathname = f"{refs.tileset_pathname}/{self.ts_filename}"
         self.ts_image = Vips.Image.pngload(self.ts_pathname)
         self.ts_width = self.ts_image.width
         self.ts_tiles_per_row = int(
@@ -64,7 +64,7 @@ class TileSheetData(object):
         self.ts_rows = int(math.floor(self.ts_height / self.sprite_height))
         self.pngnum_min = refs.last_pngnum
         self.pngnum_max = \
-            refs.last_pngnum + self.ts_tiles_per_row * self.ts_rows - 1
+                refs.last_pngnum + self.ts_tiles_per_row * self.ts_rows - 1
         #print("\t{}x{}; {} rows; spans {} to {}".format(
         #    self.ts_width, self.ts_height, self.ts_rows,
         #    self.pngnum_min, self.pngnum_max))
@@ -95,9 +95,7 @@ class TileSheetData(object):
         # wielding or wearing overlays makes no sense
         if tile_id.startswith("overlay_wielded_overlay"):
             return False
-        if tile_id.startswith("overlay_worn_overlay"):
-            return False
-        return True
+        return not tile_id.startswith("overlay_worn_overlay")
 
     def parse_id(self, tile_entry):
         all_tile_ids = []
@@ -186,10 +184,10 @@ class TileSheetData(object):
             pngnum = all_pngnums[i]
             if pngnum in refs.pngnum_to_pngname:
                 continue
-            pngname = "{}_{}_{}".format(pngnum, tile_id, i + offset)
+            pngname = f"{pngnum}_{tile_id}_{i + offset}"
             while pngname in refs.pngname_to_pngnum:
                 offset += 1
-                pngname = "{}_{}_{}".format(pngnum, tile_id, i + offset)
+                pngname = f"{pngnum}_{tile_id}_{i + offset}"
             try:
                 refs.pngnum_to_pngname.setdefault(pngnum, pngname)
                 refs.pngname_to_pngnum.setdefault(pngname, pngnum)
@@ -213,10 +211,7 @@ class TileSheetData(object):
             return
         if self.pngnum_max > 0:
             refs.ts_data[self.ts_filename] = self
-            ts_tile_info = {
-                "//": "indices {} to {}".format(
-                    self.pngnum_min, self.pngnum_max)
-            }
+            ts_tile_info = {"//": f"indices {self.pngnum_min} to {self.pngnum_max}"}
             if self.write_dim:
                 ts_tile_info["sprite_offset_x"] = self.sprite_offset_x
                 ts_tile_info["sprite_offset_y"] = self.sprite_offset_y
@@ -237,9 +232,8 @@ class ExtractionData(object):
         self.valid = True
 
         ts_base = ts_filename.split(".png")[0]
-        geometry_dim = "{}x{}".format(
-            self.ts_data.sprite_width, self.ts_data.sprite_height)
-        pngs_dir = "/pngs_" + ts_base + "_{}".format(geometry_dim)
+        geometry_dim = f"{self.ts_data.sprite_width}x{self.ts_data.sprite_height}"
+        pngs_dir = f"/pngs_{ts_base}" + f"_{geometry_dim}"
         self.ts_dir_pathname = refs.tileset_pathname + pngs_dir
         find_or_make_dir(self.ts_dir_pathname)
         self.tilenum_in_dir = 256
@@ -251,14 +245,12 @@ class ExtractionData(object):
             expansion_id = expand_entry.get("id", "expansion")
             if not isinstance(expansion_id, str):
                 continue
-            expand_entry_pathname = "{}/{}.json".format(
-                self.ts_dir_pathname, expansion_id)
+            expand_entry_pathname = f"{self.ts_dir_pathname}/{expansion_id}.json"
             write_to_json(expand_entry_pathname, expand_entry)
 
     def increment_dir(self):
         if self.tilenum_in_dir > 255:
-            self.subdir_pathname = "{}/images{}".format(
-                self.ts_dir_pathname, self.dir_count)
+            self.subdir_pathname = f"{self.ts_dir_pathname}/images{self.dir_count}"
             find_or_make_dir(self.subdir_pathname)
             self.tilenum_in_dir = 0
             self.dir_count += 1
@@ -284,7 +276,7 @@ class ExtractionData(object):
         tile_image = tile_data.ts_image.extract_area(tile_off_x, tile_off_y,
                                                      tile_data.sprite_width,
                                                      tile_data.sprite_height)
-        tile_png_pathname = self.subdir_pathname + "/" + pngname + ".png"
+        tile_png_pathname = f"{self.subdir_pathname}/{pngname}.png"
         tile_image.pngsave(tile_png_pathname)
         refs.extracted_pngnums[png_index] = True
 
@@ -321,15 +313,15 @@ class PngRefs(object):
         try:
             os.stat(self.tileset_pathname)
         except KeyError:
-            print("cannot find a directory {}".format(self.tileset_pathname))
+            print(f"cannot find a directory {self.tileset_pathname}")
             sys.exit(-1)
 
-        tileset_confname = refs.tileset_pathname + "/" + "tile_config.json"
+        tileset_confname = f"{refs.tileset_pathname}/tile_config.json"
 
         try:
             os.stat(tileset_confname)
         except KeyError:
-            print("cannot find a directory {}".format(tileset_confname))
+            print(f"cannot find a directory {tileset_confname}")
             sys.exit(-1)
 
         if delete_pathname:
@@ -366,17 +358,18 @@ class PngRefs(object):
                 if isinstance(pngnum, dict):
                     sprite_ids = pngnum.get("sprite", -10)
                     if isinstance(sprite_ids, list):
-                        new_sprites = []
-                        for sprite_id in sprite_ids:
-                            if (sprite_id >= 0 and
-                                    sprite_id not in self.delete_pngnums):
-                                new_sprites.append(
-                                    self.pngnum_to_pngname[sprite_id])
+                        new_sprites = [
+                            self.pngnum_to_pngname[sprite_id]
+                            for sprite_id in sprite_ids
+                            if (
+                                sprite_id >= 0
+                                and sprite_id not in self.delete_pngnums
+                            )
+                        ]
                         pngnum["sprite"] = new_sprites
-                    else:
-                        if (sprite_ids >= 0 and
+                    elif (sprite_ids >= 0 and
                                 sprite_ids not in self.delete_pngnums):
-                            pngnum["sprite"] = \
+                        pngnum["sprite"] = \
                                 self.pngnum_to_pngname[sprite_ids]
                     new_index.append(pngnum)
                 elif pngnum >= 0 and pngnum not in self.delete_pngnums:
@@ -403,7 +396,7 @@ class PngRefs(object):
             # we have to truncate the name since it could get really long,
             # which means this still may not be unique in the case of a
             # bunch instances like this but it's better than nothing...
-            new_id = "_".join(entity_id)[0:150]
+            new_id = "_".join(entity_id)[:150]
         else:
             new_id = entity_id
 
@@ -412,8 +405,7 @@ class PngRefs(object):
     def report_missing(self):
         for pngnum in self.pngnum_to_pngname:
             if not self.extracted_pngnums.get(pngnum):
-                print("missing index {}, {}".format(
-                    pngnum, self.pngnum_to_pngname[pngnum]))
+                print(f"missing index {pngnum}, {self.pngnum_to_pngname[pngnum]}")
 
 
 if __name__ == '__main__':
@@ -454,8 +446,7 @@ if __name__ == '__main__':
         tile_entries = {}
         all_tile_entry = tilesheet_data.get("tiles", [])
         for tile_entry in all_tile_entry:
-            tile_id = ts_data.parse_tile_entry(tile_entry, refs)
-            if tile_id:
+            if tile_id := ts_data.parse_tile_entry(tile_entry, refs):
                 tile_entries.setdefault(tile_id, [])
                 tile_entries[tile_id].append(tile_entry)
         ts_data.tile_entries = tile_entries
@@ -484,8 +475,7 @@ if __name__ == '__main__':
                     refs.convert_pngnum_to_pngname(tile_entry)
                 if not tile_entry_name:
                     continue
-                tile_entry_pathname = "{}/{}_{}.json".format(
-                    subdir_pathname, tile_entry_name, idx)
+                tile_entry_pathname = f"{subdir_pathname}/{tile_entry_name}_{idx}.json"
 
                 #if os.path.isfile(tile_entry_pathname):
                 #    print("overwriting {}".format(tile_entry_pathname))
@@ -493,7 +483,7 @@ if __name__ == '__main__':
         out_data.write_images(refs)
 
     if tile_info:
-        tile_info_pathname = refs.tileset_pathname + "/" + "tile_info.json"
+        tile_info_pathname = f"{refs.tileset_pathname}/tile_info.json"
         write_to_json(tile_info_pathname, tile_info, True)
 
     refs.report_missing()

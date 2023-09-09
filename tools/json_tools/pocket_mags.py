@@ -28,18 +28,14 @@ def gen_new(path):
                 else:
                     inheriting_item_ids.append(jo["id"])
 
-    if change:
-        return json_data
-    else:
-        return None
+    return json_data if change else None
 
 
 for root, directories, filenames in os.walk(args_dict["dir"]):
     for filename in filenames:
         path = os.path.join(root, filename)
         if path.endswith(".json"):
-            new = gen_new(path)
-            if new:
+            if new := gen_new(path):
                 with open(path, "w", encoding="utf-8") as jf:
                     json.dump(new, jf, ensure_ascii=False)
                 os.system(f"./tools/format/json_formatter.cgi {path}")

@@ -60,11 +60,7 @@ ID_WHITELIST = {
 
 
 def items_of_type(data, type):
-    result = []
-    for i in data:
-        if i['type'] == type:
-            result.append(i)
-    return result
+    return [i for i in data if i['type'] == type]
 
 
 def get_ids(items):
@@ -92,28 +88,28 @@ def get_ancestors(items_by_id, item):
         item = items_by_id[item['copy-from']]
         if item in result:
             raise RuntimeError(
-                'Cyclic dependency in copy-from involving %s' %
-                item['copy-from'])
+                f"Cyclic dependency in copy-from involving {item['copy-from']}"
+            )
         result.append(item)
     return result
 
 
 def items_for_which_any_ancestor(items, pred):
     items_by_id = {get_id(i): i for i in items}
-    result = []
-    for i in items:
-        if any(pred(ancestor) for ancestor in get_ancestors(items_by_id, i)):
-            result.append(i)
-    return result
+    return [
+        i
+        for i in items
+        if any(pred(ancestor) for ancestor in get_ancestors(items_by_id, i))
+    ]
 
 
 def items_for_which_all_ancestors(items, pred):
     items_by_id = {get_id(i): i for i in items}
-    result = []
-    for i in items:
-        if all(pred(ancestor) for ancestor in get_ancestors(items_by_id, i)):
-            result.append(i)
-    return result
+    return [
+        i
+        for i in items
+        if all(pred(ancestor) for ancestor in get_ancestors(items_by_id, i))
+    ]
 
 
 def main():
@@ -186,8 +182,7 @@ def main():
 
         missing_migrations = ids - gg_migrations
         if missing_migrations:
-            print('Missing Generic Guns migrations for these types of %s:' %
-                  name)
+            print(f'Missing Generic Guns migrations for these types of {name}:')
             print('\n'.join(sorted(missing_migrations)))
             print()
             nonlocal returncode

@@ -19,7 +19,7 @@ def print_encode_error(unicode_err, counter):
 def check(f):
     count = 1
     try:
-        for ln in f:
+        for _ in f:
             count = count + 1
     except IOError as err:
         print(err)
@@ -33,7 +33,7 @@ def check(f):
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:
-        print("Usage: {} [FILENAME]".format(sys.argv[0]))
+        print(f"Usage: {sys.argv[0]} [FILENAME]")
         sys.exit(1)
     with open(sys.argv[1], encoding="utf-8") as pot_file:
         if not check(pot_file):

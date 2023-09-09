@@ -11,16 +11,13 @@ def parse_json_object(json, origin):
     """
     if "type" in json and type(json["type"]) is str:
         json_type = json["type"].lower()
-        if json_type in parsers:
-            try:
-                parsers[json_type](json, origin)
-            except Exception as E:
-                print("Exception when parsing JSON data type \"{}\""
-                      .format(json_type))
-                raise E
-        else:
-            raise Exception("Unrecognized JSON data type \"{}\""
-                            .format(json_type))
+        if json_type not in parsers:
+            raise Exception(f'Unrecognized JSON data type \"{json_type}\"')
+        try:
+            parsers[json_type](json, origin)
+        except Exception as E:
+            print(f'Exception when parsing JSON data type \"{json_type}\"')
+            raise E
 
 
 def parse_json_file(file_path):

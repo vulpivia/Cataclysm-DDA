@@ -50,12 +50,10 @@ def gen_new(path):
                     name_obj = {'str': jo['name'], 'str_pl': jo['name_plural']}
                 jo['name'] = name_obj
                 del jo['name_plural']
-                change = True
             else:
                 name_obj = {'str': jo['name']}
                 jo['name'] = name_obj
-                change = True
-
+            change = True
     return json_data if change else None
 
 

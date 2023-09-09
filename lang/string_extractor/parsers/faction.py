@@ -9,5 +9,8 @@ def parse_faction(json, origin):
         write_text(json["name"], origin, comment="NPC faction name")
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of NPC faction \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of NPC faction \"{name}\"',
+        )

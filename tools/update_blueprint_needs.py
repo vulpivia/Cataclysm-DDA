@@ -62,15 +62,14 @@ def main(argv):
     auto_update_blueprint_end = re.compile("~~~ end-auto-update")
     json_filename = re.compile("[^.].*\\.json")
 
-    update_blueprints = dict()
+    update_blueprints = {}
 
     with open(test_log, 'r', encoding='utf-8') as fs:
         while True:
             line = fs.readline()
             if not line:
                 break
-            match_result = auto_update_blueprint.match(line)
-            if match_result:
+            if match_result := auto_update_blueprint.match(line):
                 ident = match_result.group(1)
                 reqs = ""
                 complete = False
@@ -86,14 +85,14 @@ def main(argv):
                         reqs += line
                 if complete:
                     update_blueprints[ident] = json.loads(reqs)
-                    print("{} needs updating".format(ident))
+                    print(f"{ident} needs updating")
 
-    if len(update_blueprints) == 0:
+    if not update_blueprints:
         print("no inconsistency reported in the test log")
         return
 
     for json_dir in json_dirs:
-        print("walking dir {}".format(json_dir))
+        print(f"walking dir {json_dir}")
         for root, dirs, files in os.walk(json_dir):
             for file in files:
                 json_path = os.path.join(root, file)
@@ -108,9 +107,13 @@ def main(argv):
                         raise
                 if type(content) is list:
                     for obj in content:
-                        if not (type(obj) is dict and
-                                "type" in obj and obj["type"] == "recipe" and
-                                ("result" in obj or "abstract" in obj)):
+                        if (
+                            type(obj) is not dict
+                            or "type" not in obj
+                            or obj["type"] != "recipe"
+                            or "result" not in obj
+                            and "abstract" not in obj
+                        ):
                             continue
                         ident = None
                         if "abstract" in obj:
@@ -127,7 +130,7 @@ def main(argv):
                                     update_blueprints[ident]
                             if not changed:
                                 changed = True
-                                print("updating {}".format(json_path))
+                                print(f"updating {json_path}")
                 if changed:
                     with open(json_path, 'w', encoding='utf-8') as fs:
                         json.dump(content, fs, indent=2)

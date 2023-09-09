@@ -12,6 +12,7 @@ Examples:
 Isometric tiles are saved to a new folder like gfx/UltimateCataclysm_iso.
 """
 
+
 import os
 import json
 import argparse
@@ -36,42 +37,29 @@ parser.add_argument('-f', dest='floodfill', action='store_true',
 args = parser.parse_args()
 
 # Indexed by (tile_num, initial_rotation) tuple, True if iso-converted
-converted_tile_ids = dict()
+converted_tile_ids = {}
 
 
 def iso_ize(tile_num, new_tile_num=-1, initial_rotation=0, override=False):
-    if override or (tile_num, initial_rotation) not in converted_tile_ids:
-        print("  iso-izing " + str(tile_num))
-        if new_tile_num == -1:
-            new_tile_num = tile_num
-        tile_png = "tile-{:0>6d}.png".format(tile_num)
-        command = (
-            'convert -background transparent ' +
-            new_tileset_name + '/tiles/' + tile_png +
-            ' -rotate ' + str(initial_rotation) + ' ' +
-            '-rotate -45 +repage -resize 100%x50% ' +
-            '-crop ' + str(nwidth) + 'x' + str(int(nwidth / 2)) +
-            '+2+1 ' +  # TODO: get correct offsets
-            '+repage -extent ' + str(nwidth) + 'x' + str(nheight) +
-            '+0-' + str(nheight - int(nwidth / 2)) + ' ' +
-            new_tileset_name + '/tiles/to_merge/' + tile_png)
-        print(command)
-        if os.system(command):
-            raise RuntimeError("iso-ization failed for %s" % tile_png)
-        else:
-            converted_tile_ids[(tile_num, initial_rotation)] = True
-            return True
-    return False
+    if not override and (tile_num, initial_rotation) in converted_tile_ids:
+        return False
+    print(f"  iso-izing {str(tile_num)}")
+    if new_tile_num == -1:
+        new_tile_num = tile_num
+    tile_png = "tile-{:0>6d}.png".format(tile_num)
+    command = f'convert -background transparent {new_tileset_name}/tiles/{tile_png} -rotate {str(initial_rotation)} -rotate -45 +repage -resize 100%x50% -crop {str(nwidth)}x{int(nwidth / 2)}+2+1 +repage -extent {str(nwidth)}x{str(nheight)}+0-{str(nheight - int(nwidth / 2))} {new_tileset_name}/tiles/to_merge/{tile_png}'
+    print(command)
+    if os.system(command):
+        raise RuntimeError(f"iso-ization failed for {tile_png}")
+    converted_tile_ids[(tile_num, initial_rotation)] = True
+    return True
 
 
 # convert one old tile definition to one new tile definition
 # recursive for additional-tiles
 def tile_convert(otile, main_id, new_tile_number):
-    print("tile_convert %s %s" % (main_id, new_tile_number))
-    ntile = dict()
-    ntile['id'] = otile['id']
-    ntile['ntn'] = int(new_tile_number)
-
+    print(f"tile_convert {main_id} {new_tile_number}")
+    ntile = {'id': otile['id'], 'ntn': int(new_tile_number)}
     #TODO: handle different tile transformations based on id
     #TODO: load other json files to base transforms on stats, not just id
 
@@ -86,7 +74,7 @@ def tile_convert(otile, main_id, new_tile_number):
         if type(otile[g]) == int:
             if otile[g] == -1:
                 continue
-            otile[g] = list([otile[g]])
+            otile[g] = [otile[g]]
 
         add_tile_ids = [
             'broken',
@@ -119,45 +107,69 @@ def tile_convert(otile, main_id, new_tile_number):
                 main_id.startswith('vp_') or main_id.startswith('fd_'))
             # iso-ize?
             if (
-                (terrain_or_lighting and (g == 'bg' or 'bg' not in otile)) or
-                (main_id[0:1] == ('f_') and g == 'bg' and 'fg' in otile) or
-                vehicle_part_or_field or
-                # additional_tiles:
-                otile['id'] in add_tile_ids or
-                ('rotates' in otile and otile['rotates'] is True) or
-                otile['id'] != main_id
+                (terrain_or_lighting and (g == 'bg' or 'bg' not in otile))
+                or main_id[:1] == 'f_'
+                and g == 'bg'
+                and 'fg' in otile
+                or vehicle_part_or_field
+                or otile['id'] in add_tile_ids
+                or ('rotates' in otile and otile['rotates'] is True)
+                or otile['id'] != main_id
             ):
                 # iso-ize this tile
                 iso_ize(otile[g][0], override=True)
                 if ('rotates' in otile or otile['id'] in add_tile_ids):
-                    print("  and rotating " + str(otile[g][0]))
+                    print(f"  and rotating {str(otile[g][0])}")
                     # create 3 new iso-ized tiles, as well
                     for rot in (270, 180, 90):
                         if iso_ize(otile[g][0], ntile['ntn'], rot):
                             ntile[g].append(ntile['ntn'])
                             ntile['ntn'] += 1
                             print("next tile number now " + str(ntile['ntn']))
-            else:
-                if (ntile[g][0], 0) not in converted_tile_ids:
-                    print("  offsetting " + str(ntile[g][0]))
-                    converted_tile_ids[(ntile[g][0], 0)] = True
-                    # offset this flat tile
-                    tile_png = "tile-{:0>6d}.png".format(otile[g][0])
-                    command = (
-                        'convert -background transparent ' + new_tiles_dir +
-                        '/' + tile_png +
+            elif (ntile[g][0], 0) not in converted_tile_ids:
+                print(f"  offsetting {str(ntile[g][0])}")
+                converted_tile_ids[(ntile[g][0], 0)] = True
+                # offset this flat tile
+                tile_png = "tile-{:0>6d}.png".format(otile[g][0])
+                command = (
+                    (
                         (
-                            ' -fill transparent -draw "color 0,0 floodfill"'
-                            if args.floodfill else ''
-                        ) +
-                        ' -extent ' + str(nwidth) + 'x' + str(nheight) +
-                        '-' + str(int((nwidth - owidth) / 2)) + '-' +
-                        str(int((nheight - oheight) - flat_sprite_offset)) +
-                        ' +repage ' + new_tiles_dir + '/to_merge/' + tile_png)
-                    print(command)
-                    if os.system(command):
-                        print("! Failed to offset %s, continuing" % tile_png)
-                        #raise RuntimeError("Failed to offset %s" % tile_png)
+                            (
+                                (
+                                    (
+                                        (
+                                            (
+                                                f'convert -background transparent {new_tiles_dir}/{tile_png}'
+                                                + (
+                                                    ' -fill transparent -draw "color 0,0 floodfill"'
+                                                    if args.floodfill
+                                                    else ''
+                                                )
+                                            )
+                                            + ' -extent '
+                                        )
+                                        + str(nwidth)
+                                        + 'x'
+                                    )
+                                    + str(nheight)
+                                    + '-'
+                                )
+                                + str(int((nwidth - owidth) / 2))
+                                + '-'
+                            )
+                            + str(
+                                int((nheight - oheight) - flat_sprite_offset)
+                            )
+                            + ' +repage '
+                        )
+                        + new_tiles_dir
+                    )
+                    + '/to_merge/'
+                ) + tile_png
+                print(command)
+                if os.system(command):
+                    print(f"! Failed to offset {tile_png}, continuing")
+                                        #raise RuntimeError("Failed to offset %s" % tile_png)
         else:
             ntile[g] = otile[g]
             # iso-ize each existing rotation of this tile
@@ -169,12 +181,12 @@ def tile_convert(otile, main_id, new_tile_number):
                 elif type(tile) == int:
                     iso_ize(tile)
                 else:
-                    raise RuntimeError("Unexpected sprite number: %s" % tile)
+                    raise RuntimeError(f"Unexpected sprite number: {tile}")
 
     if 'additional_tiles' in otile:
-        nta = ntile['additional_tiles'] = list()
+        nta = ntile['additional_tiles'] = []
         for otile in otile['additional_tiles']:
-            print(" handling additional_tile '%s'" % otile['id'])
+            print(f" handling additional_tile '{otile['id']}'")
             tile = tile_convert(otile, main_id, ntile['ntn'])
             ntile['ntn'] = tile['ntn']
             del tile['ntn']
@@ -188,12 +200,12 @@ def tile_convert(otile, main_id, new_tile_number):
 
 # FIXME: Rename to _dir, use relative path starting with 'gfx'?
 old_tileset_name = os.path.abspath(args.tileset)
-new_tileset_name = old_tileset_name + "_iso"
+new_tileset_name = f"{old_tileset_name}_iso"
 new_tiles_dir = os.path.join(new_tileset_name, 'tiles')
-print("New tiles will be output to %s" % new_tiles_dir)
+print(f"New tiles will be output to {new_tiles_dir}")
 
 # Ensure empty tiles output directory
-os.system('rm -rf ' + new_tiles_dir)
+os.system(f'rm -rf {new_tiles_dir}')
 
 try:
     os.mkdir(new_tileset_name)
@@ -205,17 +217,15 @@ try:
 except OSError:
     pass
 
-os.system('rm -rf ' + new_tileset_name + '/tiles/*')
+os.system(f'rm -rf {new_tileset_name}/tiles/*')
 
 try:
     os.mkdir(os.path.join(new_tiles_dir, 'to_merge'))
 except OSError:
     pass
 
-print('reading ' + old_tileset_name + '/tile_config.json')
-with open(
-        old_tileset_name + '/tile_config.json',
-        encoding="utf-8") as old_tile_config_json_file:
+print(f'reading {old_tileset_name}/tile_config.json')
+with open(f'{old_tileset_name}/tile_config.json', encoding="utf-8") as old_tile_config_json_file:
     otc = json.load(old_tile_config_json_file)
 
 oheight = otc['tile_info'][0]['height']
@@ -228,21 +238,19 @@ if SPRITE_OFFSET_FROM_BOTTOM < 1:
     flat_sprite_offset = int(nwidth * SPRITE_OFFSET_FROM_BOTTOM / 2)
 else:
     flat_sprite_offset = int(SPRITE_OFFSET_FROM_BOTTOM / 2)
-print("flat sprite offset " + str(flat_sprite_offset))
+print(f"flat sprite offset {str(flat_sprite_offset)}")
 nheight = flat_sprite_offset + oheight
 
 # struct that will become the new tileset_config.json
-ntc = dict()
-ntc['tile_info'] = list()
-ntc['tile_info'].append(dict())
+ntc = {'tile_info': [{}]}
 ntc['tile_info'][0]['height'] = nheight
 ntc['tile_info'][0]['width'] = nwidth
 ntc['tile_info'][0]['iso'] = True
 
 first_filename = ''
-ntc['tiles-new'] = list()
+ntc['tiles-new'] = []
 tile_count = 0
-new_tiles = list()
+new_tiles = []
 
 print('processing tiles-new')
 for otn in otc['tiles-new']:
@@ -254,22 +262,19 @@ for otn in otc['tiles-new']:
         continue
     if first_filename == '':
         first_filename = base_filename  # remember this for tileset.txt
-    ntc['tiles-new'].append(dict())
+    ntc['tiles-new'].append({})
     ntn = ntc['tiles-new'][-1]
     ntn['file'] = os.path.join(new_tileset_name, base_filename)
-    ntn['tiles'] = list()
+    ntn['tiles'] = []
 
     # split tile image sheet into individual tile images
-    command = (
-        'convert -crop ' + str(oheight) + 'x' + str(owidth) + ' ' + filename +
-        ' +repage ' + new_tiles_dir + '/tile-%06d.png')
+    command = f'convert -crop {str(oheight)}x{str(owidth)} {filename} +repage {new_tiles_dir}/tile-%06d.png'
 
     print(command)
     if os.system(command):
-        raise RuntimeError("Failed to split %s into tile images" % filename)
+        raise RuntimeError(f"Failed to split {filename} into tile images")
 
-    os.system(
-        'cp ' + new_tiles_dir + '/tile-*.png ' + new_tiles_dir + '/to_merge')
+    os.system(f'cp {new_tiles_dir}/tile-*.png {new_tiles_dir}/to_merge')
 
     # path joining version for other paths
     tile_count = len([
@@ -286,24 +291,18 @@ for otn in otc['tiles-new']:
         ntn['tiles'].append(tile)
 
     print('Merging tiles to single image')
-    command = (
-        'montage -background transparent "' + new_tileset_name +
-        '/tiles/to_merge/tile-*.png" -tile 16x -geometry +0+0 ' +
-        new_tileset_name + '/' + base_filename)
+    command = f'montage -background transparent "{new_tileset_name}/tiles/to_merge/tile-*.png" -tile 16x -geometry +0+0 {new_tileset_name}/{base_filename}'
     print(command)
     if os.system(command):
         raise RuntimeError("Failed to merge tiles into %s" % new_tileset_name)
 
-with open(new_tileset_name + '/tile_config.json', 'w',
-        encoding="utf-8") as tile_config_json:  # noqa: E128
+with open(f'{new_tileset_name}/tile_config.json', 'w', encoding="utf-8") as tile_config_json:  # noqa: E128
     json.dump(
         ntc, tile_config_json,
         sort_keys=True, indent=2, separators=(',', ': '), ensure_ascii=False)
 
 #TODO: replace tiles.png with first filename from json
-with open(
-        new_tileset_name + '/tileset.txt',
-        'w', encoding="utf-8") as new_tileset_txt_file:
+with open(f'{new_tileset_name}/tileset.txt', 'w', encoding="utf-8") as new_tileset_txt_file:
     new_tileset_txt_file.write(
         '#Generated by make_iso.py from flat tileset ' +
         old_tileset_name + '\n' +

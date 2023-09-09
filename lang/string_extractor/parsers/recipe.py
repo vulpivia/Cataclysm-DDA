@@ -8,10 +8,14 @@ def parse_recipe(json, origin):
                 write_text(json["book_learn"][book]["recipe_name"], origin,
                            comment="Recipe name learnt from book")
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of recipe crafting \"{}\""
-                   .format(json["result"]))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of recipe crafting \"{json["result"]}\"',
+        )
     if "blueprint_name" in json:
-        write_text(json["blueprint_name"], origin,
-                   comment="Blueprint name of recipe crafting \"{}\""
-                   .format(json["result"]))
+        write_text(
+            json["blueprint_name"],
+            origin,
+            comment=f'Blueprint name of recipe crafting \"{json["result"]}\"',
+        )

@@ -27,7 +27,7 @@ parser.add_option("-x", "--exclude_dir", dest="exclude_dir",
 
 (options, args) = parser.parse_args()
 
-if not (version_info.major >= 3 and version_info.minor >= 7):
+if version_info.major < 3 or version_info.minor < 7:
     print("Requires Python 3.7 or higher.")
     exit(1)
 

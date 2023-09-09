@@ -12,7 +12,7 @@ usage = "USAGE: strip_line_numbers.py <filename> [<filename> ...]"
 def strip_pot_file(filename):
     # Check pot file
     if not os.path.isfile(filename):
-        print("Invalid filename: %s" % filename)
+        print(f"Invalid filename: {filename}")
         sys.exit(1)
     try:
         to_write = open(filename, 'r', encoding="utf-8").readlines()
@@ -37,10 +37,7 @@ def strip_repeated_comments(lines):
     ln_length = len(lines)
     for i in range(ln_length):
         line = lines[i]
-        if i < (ln_length - 1):
-            next_line = lines[i + 1]
-        else:
-            next_line = None
+        next_line = lines[i + 1] if i < (ln_length - 1) else None
         # only act on line-comments
         if not line.startswith("#:"):
             continue

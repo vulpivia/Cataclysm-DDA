@@ -9,5 +9,8 @@ def parse_loot_zone(json, origin):
         write_text(json["name"], origin, comment="Name of loot zone")
 
     if "description" in json:
-        write_text(json["description"], origin,
-                   comment="Description of loot zone \"{}\"".format(name))
+        write_text(
+            json["description"],
+            origin,
+            comment=f'Description of loot zone \"{name}\"',
+        )

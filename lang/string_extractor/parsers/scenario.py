@@ -13,14 +13,23 @@ def parse_scenario(json, origin):
         name = json["id"]
 
     if "description" in json:
-        write_text(json["description"], origin, context="scen_desc_male",
-                   comment="Description of scenario \"{}\" for male"
-                   .format(name))
-        write_text(json["description"], origin, context="scen_desc_female",
-                   comment="Description of scenario \"{}\" for female"
-                   .format(name))
+        write_text(
+            json["description"],
+            origin,
+            context="scen_desc_male",
+            comment=f'Description of scenario \"{name}\" for male',
+        )
+        write_text(
+            json["description"],
+            origin,
+            context="scen_desc_female",
+            comment=f'Description of scenario \"{name}\" for female',
+        )
 
     if "start_name" in json:
-        write_text(json["start_name"], origin, context="start_name",
-                   comment="Starting location of scenario \"{}\""
-                   .format(name))
+        write_text(
+            json["start_name"],
+            origin,
+            context="start_name",
+            comment=f'Starting location of scenario \"{name}\"',
+        )
